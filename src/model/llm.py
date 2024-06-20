@@ -13,8 +13,8 @@ class LLM:
         with open(f"{RESPONSE_PATH}/token.txt", "r") as f:
             token = f.read().rstrip()
         
-        #self.tokenizer = AutoTokenizer.from_pretrained(model_name, token=token)
-        #self.model = AutoModelForCausalLM.from_pretrained(model_name, token=token, device_map="auto")
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, token=token)
+        self.model = AutoModelForCausalLM.from_pretrained(model_name, token=token, device_map="auto")
 
     def get_profile(self):
         with open(PROMPTS_PATH+"/profile.txt", "r") as prompt_file:
