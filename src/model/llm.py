@@ -184,15 +184,11 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu {lo_mtu}
             "lo_mtu": "65536"
         }
 
-        print("DYNAMIC VALUES:")
-        print(dynamic_values)
 
         combined_values = {**default_values, **dynamic_values}
-        print("COMBINED VALUES")
-        print(combined_values)
         ifconfig_response = static_ifconfig_template.format(**combined_values)
 
-        return ifconfig_response
+        return ifconfig_response, dynamic_values, combined_values
 
     def generate_lscpu_response(self):
         profile = self.get_profile()

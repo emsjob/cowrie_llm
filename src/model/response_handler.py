@@ -45,9 +45,15 @@ class ResponseHandler():
     def ifconfig_respond(self):
         #resp = self.find_static_response("ifconfig")
         #if resp is None:
-        resp = self.llm.generate_response("ifconfig")
+        resp, dyn, comb  = self.llm.generate_response("ifconfig")
         print("RESPONSE!!")
         print(resp)
+        print("------")
+        print("Dynamic content!!")
+        print(dyn)
+        print("------")
+        print("Combined conten!!")
+        print(comb)
         print("------")
         return resp
 
