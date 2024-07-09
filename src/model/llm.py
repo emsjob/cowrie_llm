@@ -6,6 +6,7 @@ if os.environ["COWRIE_USE_LLM"].lower() == "true":
 import re
 import json
 
+COWRIE_PATH = "/cowrie/cowrie-git/"
 RESPONSE_PATH = "/cowrie/cowrie-git/src/model"
 PROMPTS_PATH = "/cowrie/cowrie-git/src/model/prompts"
 
@@ -238,10 +239,83 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu {lo_mtu}
 
         return ifconfig_response
 
-    def generate_lscpu_response(self):
-        profile = self.get_profile()
+    #def generate_lscpu_response(self):
+        #profile = self.get_profile()
 
-        return "Makeshift lscpu response"
+        #return "Makeshift lscpu response"
+
+    def cpuinfo(self, processor, cpu_flags):
+        with open(f"{COWRIE_PATH}/honeyfs/proc/cpuinfo", "r+") as cpuinfo_file:
+            cpuinfo = cpuinfo_file.read()
+            cpuinfo_file.seek(0)
+            cpu_mhz = f"{processor.split('@ ')[1][:-3].replace('.', '')}0.00"
+            no_processors = processor.split("TM) i")[1].split("-")[0]
+            cpu_replacements = {
+                "Intel(R) Core(TM)2 Duo CPU     E8200  @ 2.66GHz": processor,
+                ": 23": f": {random.randint(60, 69)}",
+                ": 2133.304": f": {cpu_mhz}",
+                ": 10": f": {random.randint(10, 25)}",
+                ": 4270.03": f": {random.randint(4000.00, 7000.00)}",
+                ": 6144 KB": f": {1024 * random.choice(range(2, 16, 2))} KB",
+                "lahf_lm": " ".join(random.sample(cpu_flags, random.randint(6, 14))),
+                "siblings	: 2": f"siblings	: {no_processors}"
+            }
+            substrs = sorted(cpu_replacements, key=len, reverse=True)
+            regexp = re.compile('|'.join(map(re.escape, substrs)))
+            cpuinfo_update = regexp.sub(lambda match: cpu_replacements[match.group(0)], cpuinfo)
+            cpuinfo_file.write(cpuinfo_update)
+            cpuinfo_file.truncate()
+    
+    def generate_lscpu_response(self):
+        processor = "Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz"
+        cpu_flags = [
+            "fpu", "vme", "de", "pse", "tsc", "msr", "pae", "mce", "cx8", "apic",
+            "sep", "mtrr", "pge", "mca", "cmov", "pat", "pse36", "clflush", "mmx",
+            "fxsr", "sse", "sse2", "ss", "ht", "tm", "pbe", "syscall", "nx", "pdpe1gb",
+            "rdtscp", "lm", "constant_tsc", "art", "arch_perfmon", "pebs", "bts", "rep_good",
+            "nopl", "xtopology", "nonstop_tsc", "cpuid", "aperfmperf", "pni", "pclmulqdq",
+            "dtes64", "monitor", "ds_cpl", "vmx", "smx", "est", "tm2", "ssse3", "sdbg", "fma",
+            "cx16", "xtpr", "pdcm", "pcid", "dca", "sse4_1", "sse4_2", "x2apic", "movbe", "popcnt",
+            "tsc_deadline_timer", "aes", "xsave", "avx", "f16c", "rdrand", "lahf_lm", "abm",
+            "3dnowprefetch", "cpuid_fault", "epb", "invpcid_single", "ibrs", "ibpb", "stibp",
+            "tpr_shadow", "vnmi", "flexpriority", "ept", "vpid", "ept_ad", "fsgsbase", "tsc_adjust",
+            "bmi1", "avx2", "smep", "bmi2", "erms", "invpcid", "rtm", "cqm", "mpx", "rdt_a",
+            "avx512f", "avx512dq", "rdseed", "adx", "smap", "clflushopt", "clwb", "intel_pt",
+            "avx512cd", "avx512bw", "avx512vl", "xsaveopt", "xsavec", "xgetbv1", "xsaves",
+            "dtherm", "ida", "arat", "pln", "pts", "hwp", "hwp_notify", "hwp_act_window", "hwp_epp",
+            "md_clear", "flush_l1d"
+        ]
+
+        # Call the cpuinfo method to modify the cpuinfo file
+        self.cpuinfo(processor, cpu_flags)
+
+        # Generate lscpu response
+        lscpu_response = f"""
+Architecture:        x86_64
+CPU op-mode(s):      32-bit, 64-bit
+Byte Order:          Little Endian
+CPU(s):              {random.randint(4, 8)}
+On-line CPU(s) list: 0-{random.randint(3, 7)}
+Thread(s) per core:  2
+Core(s) per socket:  {random.randint(2, 4)}
+Socket(s):           1
+NUMA node(s):        1
+Vendor ID:           GenuineIntel
+CPU family:          6
+Model:               158
+Model name:          {processor}
+Stepping:            10
+CPU MHz:             {random.uniform(1.0, 4.0):.2f}
+BogoMIPS:            {random.uniform(1.0, 2.0):.2f}
+Virtualization:      VT-x
+L1d cache:           {random.randint(32, 64)}K
+L1i cache:           {random.randint(32, 64)}K
+L2 cache:            {random.randint(256, 512)}K
+L3 cache:            {random.randint(4, 16)}M
+NUMA node0 CPU(s):   0-{random.randint(3, 7)}
+Flags:               {' '.join(random.sample(cpu_flags, random.randint(10, 20)))}
+"""
+        return lscpu_response.strip()
     
 class FakeLLM:
     def __init__(self, *args, **kwargs):

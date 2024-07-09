@@ -55,6 +55,10 @@ class ResponseHandler():
     def last_respond(self):
         resp = self.llm.generate_response("last")
         return resp
+    
+    def lscpu_respond(self):
+        resp = self.llm.generate_lscpu_response()
+        return resp
 
     def find_static_response(self,
                       command:str,
