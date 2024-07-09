@@ -239,11 +239,11 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu {lo_mtu}
 
         return ifconfig_response
 
-    #def generate_lscpu_response(self):
-        #profile = self.get_profile()
+    def generate_lscpu_response(self):
+        profile = self.get_profile()
 
-        #return "Makeshift lscpu response"
-
+        return "Makeshift lscpu response"
+    '''
     def cpuinfo(self, processor, cpu_flags):
         with open(f"{COWRIE_PATH}/honeyfs/proc/cpuinfo", "r+") as cpuinfo_file:
             cpuinfo = cpuinfo_file.read()
@@ -316,7 +316,7 @@ NUMA node0 CPU(s):   0-{random.randint(3, 7)}
 Flags:               {' '.join(random.sample(cpu_flags, random.randint(10, 20)))}
 """
         return lscpu_response.strip()
-    
+        '''
 class FakeLLM:
     def __init__(self, *args, **kwargs):
         pass
