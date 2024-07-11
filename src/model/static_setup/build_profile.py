@@ -39,9 +39,15 @@ if llm is None:
 lscpu_resp = llm.generate_lscpu_response()
 
 LSCPU_PATH = TEXTCMDS_PATH+"/usr/bin/lscpu"
+
+with open(LSCPU_PATH, "r") as lscpu_file:
+    print("BEFORE: ", lscpu_file.read())
+
 with open(LSCPU_PATH, "w") as lscpu_file:
     lscpu_file.write(lscpu_resp)
 
+with open(LSCPU_PATH, "r") as lscpu_file:
+    print("AFTER: ", lscpu_file.read())
 
 
 

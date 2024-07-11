@@ -86,12 +86,9 @@ class LLM:
         tokenized_template = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=False, return_tensors="pt")
         
         holes = tokenized_template == TEMPLATE_TOKEN_ID
-        print("HOLES: ", holes)
         hole_indices = holes.nonzero()[:,1]
 
         stopping_criteria = StoppingCriteriaList([NewWordSC(tokenizer=self.tokenizer)])
-        print("TOKENIZED TEMPLATE: ", tokenized_template)
-        print("HOLE INDICES: ", hole_indices)
 
         before = tokenized_template[:, :hole_indices[0]]  
         for i in range(hole_indices.shape[0]):
@@ -218,90 +215,6 @@ NUMA node0 CPU(s):     {TEMPLATE_TOKEN}
         messages.append({"role":"user", "content":"lscpu"})
         messages.append({"role":"assistant", "content":template})
         return self.fill_template(messages)
-
-
-
-
-    def generate_ifconfig_response(self, base_prompt):
-        static_ifconfig_template = """eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu {eth0_mtu}
-        inet {eth0_ip_address}  netmask {eth0_netmask}  broadcast {eth0_broadcast}
-        inet6 {eth0_ipv6_address}  prefixlen 64  scopeid 0x20<link>
-        ether {eth0_mac_address}  txqueuelen {eth0_txqueuelen}  (Ethernet)
-        RX packets {eth0_rx_packets}  bytes {eth0_rx_bytes} ({eth0_rx_human_readable_bytes})
-        RX errors {eth0_rx_errors}  dropped {eth0_rx_dropped}  overruns {eth0_rx_overruns}  frame {eth0_rx_frame}
-        TX packets {eth0_tx_packets}  bytes {eth0_tx_bytes} ({eth0_tx_human_readable_bytes})
-        TX errors {eth0_tx_errors}  dropped {eth0_tx_dropped}  overruns {eth0_tx_overruns}  carrier {eth0_tx_carrier}  collisions {eth0_collisions}
-
-lo: flags=73<UP,LOOPBACK,RUNNING>  mtu {lo_mtu}
-        inet {lo_ip_address}  netmask {lo_netmask}
-        inet6 {lo_ipv6_address}  prefixlen 128  scopeid 0x10<host>
-        loop  txqueuelen {lo_txqueuelen}  (Local Loopback)
-        RX packets {lo_rx_packets}  bytes {lo_rx_bytes} ({lo_rx_human_readable_bytes})
-        RX errors {lo_rx_errors}  dropped {lo_rx_dropped}  overruns {lo_rx_overruns}  frame {lo_rx_frame}
-        TX packets {lo_tx_packets}  bytes {lo_tx_bytes} ({lo_tx_human_readable_bytes})
-        TX errors {lo_tx_errors}  dropped {lo_tx_dropped}  overruns {lo_tx_overruns}  carrier {lo_tx_carrier}  collisions {lo_collisions}
-        """
-
-        dynamic_prompt = (
-            "Generate realistic values for the following variables for an ifconfig command on a Linux terminal of a hospital server:\n"
-            "eth0_ip_address, eth0_netmask, eth0_broadcast, eth0_ipv6_address, eth0_mac_address, eth0_txqueuelen, eth0_rx_packets, eth0_rx_bytes, eth0_rx_human_readable_bytes, "
-            "eth0_rx_errors, eth0_rx_dropped, eth0_rx_overruns, eth0_rx_frame, eth0_tx_packets, eth0_tx_bytes, eth0_tx_human_readable_bytes, eth0_tx_errors, eth0_tx_dropped, "
-            "eth0_tx_overruns, eth0_tx_carrier, eth0_collisions, eth0_mtu, lo_ip_address, lo_netmask, lo_ipv6_address, lo_txqueuelen, lo_rx_packets, lo_rx_bytes, lo_rx_human_readable_bytes, "
-            "lo_rx_errors, lo_rx_dropped, lo_rx_overruns, lo_rx_frame, lo_tx_packets, lo_tx_bytes, lo_tx_human_readable_bytes, lo_tx_errors, lo_tx_dropped, lo_tx_overruns, lo_tx_carrier, lo_collisions, lo_mtu."
-        )
-
-        dynamic_content = self.generate_dynamic_content(base_prompt.format(cmd="ifconfig"), dynamic_prompt)
-        dynamic_values = dict(re.findall(r"(\w+):\s*([^\n]+)", dynamic_content))
-
-        default_values = {
-            "eth0_ip_address": "192.168.1.2",
-            "eth0_netmask": "255.255.255.0",
-            "eth0_broadcast": "192.168.1.255",
-            "eth0_ipv6_address": "fe80::21a:92ff:fe7a:672d",
-            "eth0_mac_address": "00:1A:92:7A:67:2D",
-            "eth0_txqueuelen": "1000",
-            "eth0_rx_packets": "123456",
-            "eth0_rx_bytes": "987654321",
-            "eth0_rx_human_readable_bytes": "987.6 MB",
-            "eth0_rx_errors": "0",
-            "eth0_rx_dropped": "0",
-            "eth0_rx_overruns": "0",
-            "eth0_rx_frame": "0",
-            "eth0_tx_packets": "123456",
-            "eth0_tx_bytes": "987654321",
-            "eth0_tx_human_readable_bytes": "987.6 MB",
-            "eth0_tx_errors": "0",
-            "eth0_tx_dropped": "0",
-            "eth0_tx_overruns": "0",
-            "eth0_tx_carrier": "0",
-            "eth0_collisions": "0",
-            "eth0_mtu": "1500",
-            "lo_ip_address": "127.0.0.1",
-            "lo_netmask": "255.0.0.0",
-            "lo_ipv6_address": "::1/128",
-            "lo_txqueuelen": "1000",
-            "lo_rx_packets": "1234",
-            "lo_rx_bytes": "123456",
-            "lo_rx_human_readable_bytes": "123.4 KB",
-            "lo_rx_errors": "0",
-            "lo_rx_dropped": "0",
-            "lo_rx_overruns": "0",
-            "lo_rx_frame": "0",
-            "lo_tx_packets": "1234",
-            "lo_tx_bytes": "123456",
-            "lo_tx_human_readable_bytes": "123.4 KB",
-            "lo_tx_errors": "0",
-            "lo_tx_dropped": "0",
-            "lo_tx_overruns": "0",
-            "lo_tx_carrier": "0",
-            "lo_collisions": "0",
-            "lo_mtu": "65536"
-        }
-
-        combined_values = {**default_values, **dynamic_values}
-        ifconfig_response = static_ifconfig_template.format(**combined_values)
-
-        return ifconfig_response
 
 class FakeLLM:
     def __init__(self, *args, **kwargs):
