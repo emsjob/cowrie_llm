@@ -86,6 +86,7 @@ class LLM:
         tokenized_template = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=False, return_tensors="pt")
         
         holes = tokenized_template == TEMPLATE_TOKEN_ID
+        print("HOLES: ", holes)
         hole_indices = holes.nonzero()[:,1]
 
         stopping_criteria = StoppingCriteriaList([NewWordSC(tokenizer=self.tokenizer)])
@@ -212,10 +213,10 @@ NUMA node0 CPU(s):     {TEMPLATE_TOKEN}
         else:
             messages = [
                 {"role":"user", "content":base_prompt},
-                {"role":"model", "content":""}
+                {"role":"assistant", "content":""}
                 ]
         messages.append({"role":"user", "content":"lscpu"})
-        messages.append({"role":"model", "content":template})
+        messages.append({"role":"assistant", "content":template})
         return self.fill_template(messages)
 
 
