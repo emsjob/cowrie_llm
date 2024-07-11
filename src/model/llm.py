@@ -89,6 +89,8 @@ class LLM:
         hole_indices = holes.nonzero()[:,1]
 
         stopping_criteria = StoppingCriteriaList([NewWordSC(tokenizer=self.tokenizer)])
+        print("TOKENIZED TEMPLATE: ", tokenized_template)
+        print("HOLE INDICES: ", hole_indices)
 
         before = tokenized_template[:, :hole_indices[0]]  
         for i in range(hole_indices.shape[0]):
