@@ -232,7 +232,7 @@ class HoneyPotShell:
 
             return parsed_arguments
 
-        start = time.time()         
+        start = time.perf_counter()         
         print("STARTING COMMAND")
         if not self.cmdpending:
             if self.protocol.pp.next_command is None:  # command dont have pipe(s)
@@ -341,9 +341,9 @@ class HoneyPotShell:
                 break
         if pp:
             self.protocol.call_command(pp, cmdclass, *cmd_array[0]["rargs"])
-        end = time.time()
+        end = time.perf_counter()
         print("END COMMAND")
-        print(f"TIME ELAPSED: {end - start}")
+        print(f"TIME ELAPSED: {end - start} seconds")
 
     def resume(self) -> None:
         if self.interactive:
