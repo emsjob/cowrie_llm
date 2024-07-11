@@ -8,6 +8,7 @@ import copy
 import os
 import re
 import shlex
+import time
 from typing import Any
 
 from twisted.internet import error
@@ -231,6 +232,8 @@ class HoneyPotShell:
 
             return parsed_arguments
 
+        start = time.time()         
+        print("STARTING COMMAND")
         if not self.cmdpending:
             if self.protocol.pp.next_command is None:  # command dont have pipe(s)
                 if self.interactive:
@@ -338,6 +341,9 @@ class HoneyPotShell:
                 break
         if pp:
             self.protocol.call_command(pp, cmdclass, *cmd_array[0]["rargs"])
+        end = time.time()
+        print("END COMMAND")
+        print(f"TIME ELAPSED: {end - start}")
 
     def resume(self) -> None:
         if self.interactive:
