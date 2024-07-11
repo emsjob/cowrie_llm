@@ -343,6 +343,8 @@ class HoneyPotShell:
             self.protocol.call_command(pp, cmdclass, *cmd_array[0]["rargs"])
         end = time.time()
         print("END COMMAND")
+        print("START: ", start)
+        print("END: ", end)
         print(f"TIME ELAPSED: {end - start} seconds")
 
     def resume(self) -> None:
