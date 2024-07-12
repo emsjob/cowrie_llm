@@ -4,6 +4,7 @@ if os.environ["COWRIE_USE_LLM"].lower() == "true":
     from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, StoppingCriteria, StoppingCriteriaList
     import torch
 import json
+import numpy as np
 
 RESPONSE_PATH = "/cowrie/cowrie-git/src/model"
 PROMPTS_PATH = "/cowrie/cowrie-git/src/model/prompts"
@@ -26,6 +27,7 @@ class LLM:
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using device: {self.device}")
+        self.num_connections = None
 
         quantization_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.bfloat16)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, token=token)
@@ -60,7 +62,11 @@ class LLM:
 
         stopping_criteria = StoppingCriteriaList([NewWordSC(tokenizer=self.tokenizer)])
 
-        before = tokenized_template[:, :hole_indices[0]]  
+        print("TOKENIZED TEMPLATE: ", tokenized_template)
+        print("HOLES: ", holes)
+        print("HOLE INDICES: ", hole_indices)
+
+        before = tokenized_template[:, :hole_indices[0]]
         for i in range(hole_indices.shape[0]):
             hole_i = hole_indices[i]
     
@@ -152,6 +158,8 @@ lo        Link encap:Local Loopback
 
 #regionnetstat
     def generate_netstat_response_template(self, messages):
+        if self.num_connections is None:
+            self.num_connections = np.random.randint(10, 30)
         template = f"""
         Active Internet connections (w/o servers)
 Proto Recv-Q Send-Q Local Address           Foreign Address         State      
@@ -165,27 +173,15 @@ unix  6      [ ]         DGRAM                    3187     /run/systemd/journal/
 unix  2      [ ]         DGRAM                    2786     /run/chrony/chronyd.sock
 unix  15     [ ]         DGRAM                    3188     /dev/log
 unix  2      [ ]         DGRAM                    10108937 @0061b
-unix  3      [ ]         STREAM     CONNECTED     16134    
-unix  2      [ ]         DGRAM                    17629    
-unix  3      [ ]         STREAM     CONNECTED     16138    
-unix  3      [ ]         STREAM     CONNECTED     16126    
-unix  3      [ ]         DGRAM                    15043    
-unix  3      [ ]         STREAM     CONNECTED     16140    
-unix  3      [ ]         STREAM     CONNECTED     16123    
-unix  3      [ ]         STREAM     CONNECTED     14876    
-unix  3      [ ]         STREAM     CONNECTED     16131    
-unix  3      [ ]         STREAM     CONNECTED     16116    
-unix  2      [ ]         DGRAM                    14878    
-unix  3      [ ]         STREAM     CONNECTED     16132    
-unix  3      [ ]         STREAM     CONNECTED     16120    
-unix  2      [ ]         DGRAM                    17412    
-unix  3      [ ]         STREAM     CONNECTED     16144    
-unix  3      [ ]         STREAM     CONNECTED     17523    
-unix  3      [ ]         STREAM     CONNECTED     16125    
-unix  3      [ ]         STREAM     CONNECTED     16135    
-unix  3      [ ]         STREAM     CONNECTED     16122    
 """
 
+        for i in range(self.num_connections):
+            connection_type = np.random.choice(["DGRAM", "STREAM"], p=[0.2, 0.8])
+            state = "CONNECTED" if connection_type == "STREAM" else ""
+            ref_cnt = 3 if state == "CONNECTED" else np.random.choice([2, 3], p=[0.8, 0.2])
+            template += f"unix  {ref_cnt}        [ ]        {connection_type}        {state}        {TEMPLATE_TOKEN}        {TEMPLATE_TOKEN}\n"
+
+        template += "unix  2      [ ]         DGRAM                    11188467"
 
         messages.append({"role":"assistant", "content":template})
         return self.fill_template(messages)

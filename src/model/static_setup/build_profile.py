@@ -34,6 +34,8 @@ except KeyError:
         llm = LLM()
     lscpu_resp = llm.generate_lscpu_response()
 """
+raise SystemExit(0)
+
 if llm is None:
     llm = LLM()
 lscpu_resp = llm.generate_lscpu_response()
