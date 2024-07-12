@@ -3,7 +3,6 @@ import os
 if os.environ["COWRIE_USE_LLM"].lower() == "true":
     from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, StoppingCriteria, StoppingCriteriaList
     import torch
-import re
 import json
 
 RESPONSE_PATH = "/cowrie/cowrie-git/src/model"
@@ -18,6 +17,7 @@ with open(f"{RESPONSE_PATH}/cmd_lookup.json", "r") as f:
     LOOKUPS = json.load(f)
 
 class LLM:
+#region base
     def __init__(self, model_name="microsoft/Phi-3-mini-4k-instruct"):
         with open(f"{RESPONSE_PATH}/token.txt", "r") as f:
             token = f.read().rstrip()
@@ -41,47 +41,17 @@ class LLM:
             examples = json.load(ex_file)
         return examples
 
-    
-    def generate_dynamic_content(self, base_prompt, dynamic_part):
-        messages = [
-            {"role": "user", "content": base_prompt},
-            {"role": "assistant", "content": dynamic_part},
-        ]
-        tokenized_chat = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt").to(self.device)
-        len_chat = tokenized_chat.shape[1]
-        outputs = self.model.generate(tokenized_chat, max_new_tokens=50)
-        response = self.tokenizer.decode(outputs[0][len_chat:], skip_special_tokens=True)
-        return response.strip()
-    
     def generate_from_messages(self, messages, max_new_tokens=100):
         tokenized_chat = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt")
-        print("tokenized chat:")
-        print(tokenized_chat)
+        print("prompt:")
+        print(self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True))
         len_chat = tokenized_chat.shape[1]
         outputs = self.model.generate(tokenized_chat, max_new_tokens=max_new_tokens)
         response = self.tokenizer.decode(outputs[0][len_chat:], skip_special_tokens=True)
         return response
+#endregion
 
-    def generate_ls_response(self, cwd):
-        def format_q(cmd, cwd):
-            return f"Command: {cmd}\nCurrent directory: {cwd}"
-
-        #Maybe we should load all these by initialisation
-        examples = self.get_examples("ls")
-        ex_q = [format_q(ex["cmd"], ex["cwd"]) for ex in examples]
-        ex_a = [ex["response"] for ex in examples]
-
-        messages = [{"role":"user", "content":self.profile},
-                    {"role":"model", "content":""}]
-        for i in range(len(examples)):
-            messages.append({"role":"user", "content":ex_q[i]})
-            messages.append({"role":"model", "content":ex_a[i]})
-        
-        messages.append({"role":"user", "content":format_q("ls", cwd)})
-
-        return self.generate_from_messages(messages)
-
-
+#region template
     def fill_template(self, messages, max_slot_len=20):
         tokenized_template = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=False, return_tensors="pt")
         
@@ -105,10 +75,30 @@ class LLM:
             else:
               before = torch.cat([before, tokenized_template[:, hole_i+1:hole_indices[i+1]]], dim=1)
         return self.tokenizer.decode(tokenized_template[0, :])
+#endregion
 
+#region ls
+    def generate_ls_response(self, cwd):
+        def format_q(cmd, cwd):
+            return f"Command: {cmd}\nCurrent directory: {cwd}"
 
+        #Maybe we should load all these by initialisation
+        examples = self.get_examples("ls")
+        ex_q = [format_q(ex["cmd"], ex["cwd"]) for ex in examples]
+        ex_a = [ex["response"] for ex in examples]
 
+        messages = [{"role":"system", "content":self.profile},
+                    {"role":"assistant", "content":""}]
+        for i in range(len(examples)):
+            messages.append({"role":"user", "content":ex_q[i]})
+            messages.append({"role":"assistant", "content":ex_a[i]})
+        
+        messages.append({"role":"user", "content":format_q("ls", cwd)})
 
+        return self.generate_from_messages(messages)
+#endregion
+
+#region ifconfig
     def generate_ifconfig_response_template(self, messages):
         template = f"""
 eth0      Link encap:Ethernet  HWaddr {TEMPLATE_TOKEN}  
@@ -158,7 +148,9 @@ lo        Link encap:Local Loopback
         if use_template:
             return self.generate_ifconfig_response_template(messages)
         return self.generate_from_messages(messages, max_new_tokens=1000)
+#endregion
 
+#region lscpu
     def generate_lscpu_response(self):
         base_prompt = self.get_profile()
         template = f"""Architecture:          {TEMPLATE_TOKEN}
@@ -215,7 +207,9 @@ NUMA node0 CPU(s):     {TEMPLATE_TOKEN}
         messages.append({"role":"user", "content":"lscpu"})
         messages.append({"role":"assistant", "content":template})
         return self.fill_template(messages)
+#endregion
 
+#region support-classes
 class FakeLLM:
     def __init__(self, *args, **kwargs):
         pass
@@ -246,3 +240,4 @@ class NewWordSC(StoppingCriteria):
             elif decoded == "":
               res[i] = True
         return res
+#endregion

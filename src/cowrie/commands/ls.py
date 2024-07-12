@@ -69,10 +69,12 @@ class Command_ls(HoneyPotCommand):
         #Before responding, let the response handler manage the paths/directories
         if hasattr(self, "rh") and self.useLLM:
             if not paths:
-                self.rh.ls_respond(path)
+                if not self.get_dir_files(path):
+                    self.rh.ls_respond(path)
             else:
                 for path in paths:
-                    self.rh.ls_respond(path)
+                    if not self.get_dir_files(path):
+                        self.rh.ls_respond(path)
 
         if not paths:
             func(path)
