@@ -176,20 +176,31 @@ L2 cache:              {TEMPLATE_TOKEN}
 NUMA node0 CPU(s):     {TEMPLATE_TOKEN}
 """
         examples = self.get_examples("lscpu")
-        """
-        base_prompt = base_prompt + "\n\nHere are an example of a response to the lscpu command:"
-        base_prompt = base_prompt + f"\n\n{examples['response']}"
+        base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the lscpu command'
 
-        messages = [
-            {"role": "user", "content": base_prompt}
-        ]
+        for i in range(len(examples)):
+            base_prompt = base_prompt+f"\n\nExample {i+1}:\n"+examples[i]["response"]
 
-        tokenized_chat = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt")
-        len_chat = tokenized_chat.shape[1]
-        outputs = self.model.generate(tokenized_chat, max_new_tokens=250)
-        response = self.tokenizer.decode(outputs[0][len_chat:], skip_special_tokens=True)
-        return response.strip()
-        """
+        if SYSTEM_ROLE_AVAILABLE:
+            messages = [
+                {"role":"system", "content":base_prompt}
+                ]
+        else:
+            messages = [
+                {"role":"user", "content":base_prompt},
+                {"role":"assistant", "content":""}
+                ]
+        messages.append({"role":"user", "content":"lscpu"})
+        messages.append({"role":"assistant", "content":template})
+        return self.fill_template(messages)
+
+    def generate_free_response(self):
+        base_prompt = self.get_profile()
+        template = """              total        used        free      shared  buff/cache   available
+Mem:{TEMPLATE_TOKEN:>15}{TEMPLATE_TOKEN:>12}{TEMPLATE_TOKEN:>12}{TEMPLATE_TOKEN:>12}{TEMPLATE_TOKEN:>12}{TEMPLATE_TOKEN:>12}
+Swap:{TEMPLATE_TOKEN:>14}{TEMPLATE_TOKEN:>12}{TEMPLATE_TOKEN:>12}
+"""
+        examples = self.get_examples("free")
         base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the lscpu command'
 
         for i in range(len(examples)):
