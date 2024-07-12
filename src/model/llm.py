@@ -62,6 +62,7 @@ class LLM:
 
         print("TOKENIZED TEMPLATE: ", tokenized_template)
         print("HOLES: ", holes)
+        print("HOLE INDICES: ", hole_indices)
         before = tokenized_template[:, :hole_indices[0]]  
         for i in range(hole_indices.shape[0]):
             hole_i = hole_indices[i]
