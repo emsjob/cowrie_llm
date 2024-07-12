@@ -150,6 +150,72 @@ lo        Link encap:Local Loopback
         return self.generate_from_messages(messages, max_new_tokens=1000)
 #endregion
 
+#regionnetstat
+    def generate_netstat_response_template(self, messages):
+        template = f"""
+        Active Internet connections (w/o servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State      
+tcp        0    200 ip-172-31-22-97.eu-:ssh 138.247.230.44:53322    ESTABLISHED
+Active UNIX domain sockets (w/o servers)
+Proto RefCnt Flags       Type       State         I-Node   Path
+unix  2      [ ]         DGRAM                    2356     /run/systemd/shutdownd
+unix  3      [ ]         DGRAM                    3180     /run/systemd/notify
+unix  2      [ ]         DGRAM                    3181     /run/systemd/cgroups-agent
+unix  6      [ ]         DGRAM                    3187     /run/systemd/journal/socket
+unix  2      [ ]         DGRAM                    2786     /run/chrony/chronyd.sock
+unix  15     [ ]         DGRAM                    3188     /dev/log
+unix  2      [ ]         DGRAM                    10108937 @0061b
+unix  3      [ ]         STREAM     CONNECTED     16134    
+unix  2      [ ]         DGRAM                    17629    
+unix  3      [ ]         STREAM     CONNECTED     16138    
+unix  3      [ ]         STREAM     CONNECTED     16126    
+unix  3      [ ]         DGRAM                    15043    
+unix  3      [ ]         STREAM     CONNECTED     16140    
+unix  3      [ ]         STREAM     CONNECTED     16123    
+unix  3      [ ]         STREAM     CONNECTED     14876    
+unix  3      [ ]         STREAM     CONNECTED     16131    
+unix  3      [ ]         STREAM     CONNECTED     16116    
+unix  2      [ ]         DGRAM                    14878    
+unix  3      [ ]         STREAM     CONNECTED     16132    
+unix  3      [ ]         STREAM     CONNECTED     16120    
+unix  2      [ ]         DGRAM                    17412    
+unix  3      [ ]         STREAM     CONNECTED     16144    
+unix  3      [ ]         STREAM     CONNECTED     17523    
+unix  3      [ ]         STREAM     CONNECTED     16125    
+unix  3      [ ]         STREAM     CONNECTED     16135    
+unix  3      [ ]         STREAM     CONNECTED     16122    
+"""
+
+
+        messages.append({"role":"assistant", "content":template})
+        return self.fill_template(messages)
+
+
+    def generate_netstat_response(self, use_template=True):
+        base_prompt = self.profile
+        examples = self.get_examples("netstat")
+
+        if len(examples) > 0:
+            base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the netstat command:'
+            for i in range(len(examples)):
+                base_prompt = base_prompt+f"\n\nExample {i+1}:\n"+examples[i]["response"]
+
+        if SYSTEM_ROLE_AVAILABLE:
+            messages = [
+                {"role":"system", "content":base_prompt}
+                ]
+        else:
+            messages = [
+                {"role":"user", "content":base_prompt},
+                {"role":"assistant", "content":""}
+                ]
+        messages.append({"role":"user", "content":"COMMAND: netstat"})
+
+        if use_template:
+            return self.generate_ifconfig_response_template(messages)
+        return self.generate_from_messages(messages, max_new_tokens=1000)
+#endregion
+
 #region lscpu
     def generate_lscpu_response(self):
         base_prompt = self.get_profile()

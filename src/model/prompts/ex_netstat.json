@@ -1,0 +1,3 @@
+[
+     {"cmd": "netstat", "response": "Active Internet connections (w/o servers)\nProto Recv-Q Send-Q Local Address           Foreign Address         State\ntcp        0      0 *:ssh                   *:*                     LISTEN\ntcp6       0      0 [::]:ssh                [::]:*                  LISTEN\nActive UNIX domain sockets (only servers)\nProto RefCnt Flags       Type       State         I-Node   Path\nunix  2      [ ACC ]     STREAM     LISTENING     8969     /var/run/acpid.socket\nunix  2      [ ACC ]     STREAM     LISTENING     6807     @/com/ubuntu/upstart\nunix  2      [ ACC ]     STREAM     LISTENING     7299     /var/run/dbus/system_bus_socket\nunix  2      [ ACC ]     SEQPACKET  LISTENING     7159     /run/udev/control"}
+]
