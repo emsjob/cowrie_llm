@@ -121,7 +121,7 @@ lo        Link encap:Local Loopback
           RX bytes:{TEMPLATE_TOKEN} ({TEMPLATE_TOKEN} KB)  TX bytes:{TEMPLATE_TOKEN} ({TEMPLATE_TOKEN} KB)
 """
 
-        messages.append({"role":"model", "content":template})
+        messages.append({"role":"assistant", "content":template})
         return self.fill_template(messages)
 
 
@@ -141,7 +141,7 @@ lo        Link encap:Local Loopback
         else:
             messages = [
                 {"role":"user", "content":base_prompt},
-                {"role":"model", "content":""}
+                {"role":"assistant", "content":""}
                 ]
         messages.append({"role":"user", "content":"COMMAND: ifconfig"})
 
