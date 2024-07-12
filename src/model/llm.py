@@ -212,7 +212,7 @@ unix  3      [ ]         STREAM     CONNECTED     16122
         messages.append({"role":"user", "content":"COMMAND: netstat"})
 
         if use_template:
-            return self.generate_ifconfig_response_template(messages)
+            return self.generate_netstat_response_template(messages)
         return self.generate_from_messages(messages, max_new_tokens=1000)
 #endregion
 
