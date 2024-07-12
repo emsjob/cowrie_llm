@@ -193,7 +193,9 @@ NUMA node0 CPU(s):     {TEMPLATE_TOKEN}
         messages.append({"role":"user", "content":"lscpu"})
         messages.append({"role":"assistant", "content":template})
         return self.fill_template(messages)
+#endregion
 
+#region free
     def generate_free_response(self):
         base_prompt = self.get_profile()
         template = """              total        used        free      shared  buff/cache   available
