@@ -42,7 +42,7 @@ class LLM:
         return examples
 
     def generate_from_messages(self, messages, max_new_tokens=100):
-        tokenized_chat = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt")
+        tokenized_chat = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt").to(self.device)
         print("prompt:")
         print(self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True))
         len_chat = tokenized_chat.shape[1]
@@ -87,8 +87,7 @@ class LLM:
         ex_q = [format_q(ex["cmd"], ex["cwd"]) for ex in examples]
         ex_a = [ex["response"] for ex in examples]
 
-        messages = [{"role":"system", "content":self.profile},
-                    {"role":"assistant", "content":""}]
+        messages = [{"role":"system", "content":self.profile}]
         for i in range(len(examples)):
             messages.append({"role":"user", "content":ex_q[i]})
             messages.append({"role":"assistant", "content":ex_a[i]})
@@ -253,4 +252,73 @@ class NewWordSC(StoppingCriteria):
             elif decoded == "":
               res[i] = True
         return res
+#endregion
+
+#region ServiceLLM
+import multiprocessing as mp
+from queue import Empty
+import threading
+import uuid
+
+class SingletonMeta(type):
+    _instances = {}
+    _lock = threading.Lock()
+
+    def __call__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls._instances.get(cls) is None:
+                instance = super().__call__(*args, **kwargs)
+                cls._instances[cls] = instance
+        return cls._instances[cls]
+
+
+class ServiceLLM(metaclass=SingletonMeta):
+    def __init__(self, model_name="microsoft/Phi-3-mini-4k-instruct"):
+        print("Starting LLM service")
+        self.model_name=model_name
+
+        self.manager = mp.Manager()
+
+        self.queue = mp.Queue()
+        self.result_pipes = self.manager.dict()
+
+        self.worker = mp.Process(target=self._process_requests)
+        self.worker.start()
+
+    def _process_requests(self):
+        print("starting worker")
+        llm = LLM(model_name=self.model_name)
+        print("starting loop")
+        while True:
+            try:
+                request_id, method_name, args, kwargs = self.queue.get(timeout=1)
+                print("found:")
+                print(f"{request_id} {method_name} {args} {kwargs}")
+                result = getattr(llm, method_name)(*args, **kwargs)
+
+                result_pipe = self.result_pipes.pop(request_id, None)
+                print("retrieved result_pipe:")
+                print(result_pipe)
+                if result_pipe:
+                    result_pipe.send(result)
+                    result_pipe.close()
+                else:
+                    print("could not find pipe")
+            except Empty:
+                continue
+
+    def __getattr__(self, attr):
+        print("getting attribute")
+
+        def func(*args, **kwargs):
+            parent_conn, child_conn = mp.Pipe()
+
+            request_id = str(uuid.uuid4())
+            self.result_pipes[request_id] = child_conn
+            self.queue.put((request_id, attr, args, kwargs))
+            result = parent_conn.recv()
+            parent_conn.close()
+            return result
+        return func
+
 #endregion

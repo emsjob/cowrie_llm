@@ -16,8 +16,8 @@ class CowrieHandler():
         if path in self.enforced_ls_paths:
             return
 
-        items = ls_view.split(" ") 
-
+        items = re.split(r'\s+', ls_view)
+        print("ls items:", items)
         def is_file(item: str):
             return "." in item
         

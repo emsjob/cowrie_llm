@@ -66,14 +66,26 @@ class Command_ls(HoneyPotCommand):
         for arg in args:
             paths.append(self.protocol.fs.resolve_path(arg, self.protocol.cwd))
 
+        
+
         #Before responding, let the response handler manage the paths/directories
         if hasattr(self, "rh") and self.useLLM:
             if not paths:
-                if not self.get_dir_files(path):
+                try:
+                    obj = self.fs.getfile(path)
+                    is_llm = obj[10]
+                except IndexError:
+                    is_llm = False
+                if is_llm:
                     self.rh.ls_respond(path)
             else:
                 for path in paths:
-                    if not self.get_dir_files(path):
+                    try:
+                        obj = self.fs.getfile(path)
+                        is_llm = obj[10]
+                    except IndexError:
+                        is_llm = False
+                    if is_llm:
                         self.rh.ls_respond(path)
 
         if not paths:

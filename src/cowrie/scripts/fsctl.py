@@ -323,11 +323,14 @@ class fseditCmd(cmd.Cmd):
         """
 
         arg_list = args.split()
+
         if len(arg_list) < 1:
-            print("usage: mkdir <new directory> <new directory>...")
-        else:
-            for arg in arg_list:
-                self.mkfile(arg.split(), T_DIR)
+            print("usage: mkdir <new directory> <new directory>... is_llm")
+            return
+        
+        is_llm = arg_list[-1].lower() in ['true', '1', 'llm']
+        for arg in arg_list[:-1]:
+            self.mkfile(arg.split(), T_DIR, is_llm=is_llm)
 
     def do_touch(self, args):
         """
@@ -343,7 +346,7 @@ class fseditCmd(cmd.Cmd):
         else:
             self.mkfile(arg_list, T_FILE)
 
-    def mkfile(self, args, file_type):
+    def mkfile(self, args, file_type, is_llm=False):
         """
         args must be a list of arguments
         """
@@ -384,7 +387,7 @@ class fseditCmd(cmd.Cmd):
         ctime = time.time()
 
         cwd[A_CONTENTS].append(
-            [fileName, file_type, uid, gid, size, mode, ctime, [], None, None]
+            [fileName, file_type, uid, gid, size, mode, ctime, [], None, None, is_llm]
         )
 
         self.save_pickle()
