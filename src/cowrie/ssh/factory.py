@@ -23,6 +23,8 @@ from cowrie.ssh.userauth import HoneyPotSSHUserAuthServer
 from cowrie.ssh_proxy import server_transport as proxyTransport
 from cowrie.ssh_proxy.userauth import ProxySSHAuthServer
 
+from model.llm import ServiceLLM
+
 
 class CowrieSSHFactory(factory.SSHFactory):
     """
@@ -63,6 +65,9 @@ class CowrieSSHFactory(factory.SSHFactory):
     def startFactory(self):
         # For use by the uptime command
         self.starttime = time.time()
+
+        # Start LLM service
+        ServiceLLM()
 
         # Load/create keys
         try:
