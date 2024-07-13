@@ -4,6 +4,7 @@ if os.environ["COWRIE_USE_LLM"].lower() == "true":
     from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, StoppingCriteria, StoppingCriteriaList
     import torch
 import json
+import numpy as np
 
 RESPONSE_PATH = "/cowrie/cowrie-git/src/model"
 PROMPTS_PATH = "/cowrie/cowrie-git/src/model/prompts"
@@ -26,6 +27,7 @@ class LLM:
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using device: {self.device}")
+        self.num_connections = None
 
         quantization_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.bfloat16)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, token=token)
@@ -60,7 +62,11 @@ class LLM:
 
         stopping_criteria = StoppingCriteriaList([NewWordSC(tokenizer=self.tokenizer)])
 
-        before = tokenized_template[:, :hole_indices[0]]  
+        print("TOKENIZED TEMPLATE: ", tokenized_template)
+        print("HOLES: ", holes)
+        print("HOLE INDICES: ", hole_indices)
+
+        before = tokenized_template[:, :hole_indices[0]]
         for i in range(hole_indices.shape[0]):
             hole_i = hole_indices[i]
     
@@ -120,7 +126,7 @@ lo        Link encap:Local Loopback
           RX bytes:{TEMPLATE_TOKEN} ({TEMPLATE_TOKEN} KB)  TX bytes:{TEMPLATE_TOKEN} ({TEMPLATE_TOKEN} KB)
 """
 
-        messages.append({"role":"model", "content":template})
+        messages.append({"role":"assistant", "content":template})
         return self.fill_template(messages)
 
 
@@ -140,12 +146,68 @@ lo        Link encap:Local Loopback
         else:
             messages = [
                 {"role":"user", "content":base_prompt},
-                {"role":"model", "content":""}
+                {"role":"assistant", "content":""}
                 ]
         messages.append({"role":"user", "content":"COMMAND: ifconfig"})
 
         if use_template:
             return self.generate_ifconfig_response_template(messages)
+        return self.generate_from_messages(messages, max_new_tokens=1000)
+#endregion
+
+#regionnetstat
+    def generate_netstat_response_template(self, messages):
+        if self.num_connections is None:
+            self.num_connections = np.random.randint(10, 30)
+        template = f"""
+        Active Internet connections (w/o servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State      
+tcp        0    200 ip-172-31-22-97.eu-:ssh 138.247.230.44:53322    ESTABLISHED
+Active UNIX domain sockets (w/o servers)
+Proto RefCnt Flags       Type       State         I-Node   Path
+unix  2      [ ]         DGRAM                    2356     /run/systemd/shutdownd
+unix  3      [ ]         DGRAM                    3180     /run/systemd/notify
+unix  2      [ ]         DGRAM                    3181     /run/systemd/cgroups-agent
+unix  6      [ ]         DGRAM                    3187     /run/systemd/journal/socket
+unix  2      [ ]         DGRAM                    2786     /run/chrony/chronyd.sock
+unix  15     [ ]         DGRAM                    3188     /dev/log
+unix  2      [ ]         DGRAM                    10108937 @0061b
+"""
+
+        for i in range(self.num_connections):
+            connection_type = np.random.choice(["DGRAM", "STREAM"], p=[0.2, 0.8])
+            state = "CONNECTED" if connection_type == "STREAM" else ""
+            ref_cnt = 3 if state == "CONNECTED" else np.random.choice([2, 3], p=[0.8, 0.2])
+            template += f"unix  {ref_cnt}        [ ]        {connection_type}        {state}        {TEMPLATE_TOKEN}        {TEMPLATE_TOKEN}\n"
+
+        template += "unix  2      [ ]         DGRAM                    11188467"
+
+        messages.append({"role":"assistant", "content":template})
+        return self.fill_template(messages)
+
+
+    def generate_netstat_response(self, use_template=True):
+        base_prompt = self.profile
+        examples = self.get_examples("netstat")
+
+        if len(examples) > 0:
+            base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the netstat command:'
+            for i in range(len(examples)):
+                base_prompt = base_prompt+f"\n\nExample {i+1}:\n"+examples[i]["response"]
+
+        if SYSTEM_ROLE_AVAILABLE:
+            messages = [
+                {"role":"system", "content":base_prompt}
+                ]
+        else:
+            messages = [
+                {"role":"user", "content":base_prompt},
+                {"role":"assistant", "content":""}
+                ]
+        messages.append({"role":"user", "content":"COMMAND: netstat"})
+
+        if use_template:
+            return self.generate_netstat_response_template(messages)
         return self.generate_from_messages(messages, max_new_tokens=1000)
 #endregion
 

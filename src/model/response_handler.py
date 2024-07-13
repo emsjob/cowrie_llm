@@ -34,9 +34,9 @@ class ResponseHandler():
         self.ch.enforce_ls(path, resp)
 
     def netstat_respond(self):
-        resp = self.find_static_response("netstat")
-        if resp is None:
-            resp = self.llm.generate_netstat_response()
+        #resp = self.find_static_response("netstat")
+        #if resp is None:
+        resp = self.llm.generate_netstat_response()
         print("RESPONSE!!")
         print(resp)
         print("------")
