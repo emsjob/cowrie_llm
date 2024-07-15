@@ -74,15 +74,18 @@ class Command_ls(HoneyPotCommand):
                 try:
                     obj = self.fs.getfile(path)
                     is_llm = obj[10]
+                    obj[10] = False
                 except IndexError:
                     is_llm = False
                 if is_llm:
                     self.rh.ls_respond(path)
+
             else:
                 for path in paths:
                     try:
                         obj = self.fs.getfile(path)
                         is_llm = obj[10]
+                        obj[10] = False
                     except IndexError:
                         is_llm = False
                     if is_llm:
