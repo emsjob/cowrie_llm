@@ -46,14 +46,22 @@ class ResponseHandler():
     def ifconfig_respond(self):
         #resp = self.find_static_response("ifconfig")
         #if resp is None:
-        resp = self.llm.generate_ifconfig_response(use_template=True)
+        resp = self.llm.generate_ifconfig_response()
         print("ifconfig RESPONSE!!")
         print(resp)
         print("------")
         return resp
 
+    def free_respond(self):
+        resp = self.llm.generate_free_response()
+        return resp
+
+    def lscpu_respond(self):
+        resp = self.llm.generate_lscpu_response()
+        return resp
+
     def last_respond(self):
-        resp = self.llm.generate_response("last")
+        resp = self.llm.generate_last_response()
         return resp
 
     def find_static_response(self,

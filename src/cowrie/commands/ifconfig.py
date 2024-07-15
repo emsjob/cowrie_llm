@@ -78,7 +78,7 @@ lo        Link encap:Local Loopback
 
         if hasattr(self, "rh"):
             self.write(self.rh.ifconfig_respond())
-            self.write("\n")
+            self.write("\n\n")
         else:
             self.write(f"{result}\n")
 

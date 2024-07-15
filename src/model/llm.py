@@ -83,6 +83,30 @@ class LLM:
         return self.tokenizer.decode(tokenized_template[0, :])
 #endregion
 
+#region general response
+    def generate_general_response(self, cmd):
+        base_prompt = self.profile
+        examples = self.get_examples(cmd)
+
+        if len(examples) > 0:
+            base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the {cmd} command:'
+            for i in range(len(examples)):
+                base_prompt = base_prompt+f"\n\nExample {i+1}:\n"+examples[i]["response"]
+
+        if SYSTEM_ROLE_AVAILABLE:
+            messages = [
+                {"role":"system", "content":base_prompt}
+                ]
+        else:
+            messages = [
+                {"role":"user", "content":base_prompt},
+                {"role":"assistant", "content":""}
+                ]
+        messages.append({"role":"user", "content":f"COMMAND: {cmd}"})
+
+        return self.generate_from_messages(messages, max_new_tokens=1000)
+#endregion
+
 #region ls
     def generate_ls_response(self, cwd):
         def format_q(cmd, cwd):
@@ -130,7 +154,9 @@ lo        Link encap:Local Loopback
         return self.fill_template(messages)
 
 
-    def generate_ifconfig_response(self, use_template=True):
+    def generate_ifconfig_response(self, use_template=False):
+        return self.generate_general_response("ifconfig")
+        '''
         base_prompt = self.profile
         examples = self.get_examples("ifconfig")
 
@@ -153,12 +179,14 @@ lo        Link encap:Local Loopback
         if use_template:
             return self.generate_ifconfig_response_template(messages)
         return self.generate_from_messages(messages, max_new_tokens=1000)
+        '''
 #endregion
 
-#regionnetstat
+#region netstat
     def generate_netstat_response_template(self, messages):
         if self.num_connections is None:
-            self.num_connections = np.random.randint(10, 30)
+            self.num_connections = np.random.randint(5, 15)
+            print(f"Num netstat connections created: {self.num_connections}")
         template = f"""
         Active Internet connections (w/o servers)
 Proto Recv-Q Send-Q Local Address           Foreign Address         State      
@@ -178,7 +206,7 @@ unix  2      [ ]         DGRAM                    10108937 @0061b
             connection_type = np.random.choice(["DGRAM", "STREAM"], p=[0.2, 0.8])
             state = "CONNECTED" if connection_type == "STREAM" else ""
             ref_cnt = 3 if state == "CONNECTED" else np.random.choice([2, 3], p=[0.8, 0.2])
-            template += f"unix  {ref_cnt}        [ ]        {connection_type}        {state}        {TEMPLATE_TOKEN}        {TEMPLATE_TOKEN}\n"
+            template += f"unix  {ref_cnt}      [ ]        {connection_type}      {state}        {TEMPLATE_TOKEN}        {TEMPLATE_TOKEN}\n"
 
         template += "unix  2      [ ]         DGRAM                    11188467"
 
@@ -186,7 +214,9 @@ unix  2      [ ]         DGRAM                    10108937 @0061b
         return self.fill_template(messages)
 
 
-    def generate_netstat_response(self, use_template=True):
+    def generate_netstat_response(self, use_template=False):
+        return self.generate_general_response("netstat")
+        '''
         base_prompt = self.profile
         examples = self.get_examples("netstat")
 
@@ -205,38 +235,20 @@ unix  2      [ ]         DGRAM                    10108937 @0061b
                 {"role":"assistant", "content":""}
                 ]
         messages.append({"role":"user", "content":"COMMAND: netstat"})
-
+    
         if use_template:
             return self.generate_netstat_response_template(messages)
         return self.generate_from_messages(messages, max_new_tokens=1000)
+        '''
 #endregion
 
 #region lscpu
     def generate_lscpu_response(self):
+        return self.generate_general_response("lscpu")
+        '''
         base_prompt = self.get_profile()
-        template = f"""Architecture:          {TEMPLATE_TOKEN}
-CPU op-mode(s):        {TEMPLATE_TOKEN}, {TEMPLATE_TOKEN}
-Byte Order:            {TEMPLATE_TOKEN}
-CPU(s):                {TEMPLATE_TOKEN}
-On-line CPU(s) list:   {TEMPLATE_TOKEN}
-Thread(s) per core:    {TEMPLATE_TOKEN}
-Core(s) per socket:    {TEMPLATE_TOKEN}
-Socket(s):             {TEMPLATE_TOKEN}
-NUMA node(s):          {TEMPLATE_TOKEN}
-Vendor ID:             {TEMPLATE_TOKEN}
-CPU family:            {TEMPLATE_TOKEN}
-Model:                 {TEMPLATE_TOKEN}
-Stepping:              {TEMPLATE_TOKEN}
-CPU MHz:               {TEMPLATE_TOKEN}
-BogoMIPS:              {TEMPLATE_TOKEN}
-Hypervisor vendor:     {TEMPLATE_TOKEN}
-Virtualization type:   {TEMPLATE_TOKEN}
-L1d cache:             {TEMPLATE_TOKEN}
-L1i cache:             {TEMPLATE_TOKEN}
-L2 cache:              {TEMPLATE_TOKEN}
-NUMA node0 CPU(s):     {TEMPLATE_TOKEN}
-"""
         examples = self.get_examples("lscpu")
+
         base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the lscpu command'
 
         for i in range(len(examples)):
@@ -253,21 +265,20 @@ NUMA node0 CPU(s):     {TEMPLATE_TOKEN}
                 ]
         messages.append({"role":"user", "content":"lscpu"})
         messages.append({"role":"assistant", "content":template})
-        return self.fill_template(messages)
+        return self.generate_from_messages(messages, max_new_tokens=1000)
+        '''
 #endregion
 
 #region free
     def generate_free_response(self):
+        return self.generate_general_response("free")
+        '''
         base_prompt = self.get_profile()
-        template = """              total        used        free      shared  buff/cache   available
-Mem:{TEMPLATE_TOKEN:>15}{TEMPLATE_TOKEN:>12}{TEMPLATE_TOKEN:>12}{TEMPLATE_TOKEN:>12}{TEMPLATE_TOKEN:>12}{TEMPLATE_TOKEN:>12}
-Swap:{TEMPLATE_TOKEN:>14}{TEMPLATE_TOKEN:>12}{TEMPLATE_TOKEN:>12}
-"""
         examples = self.get_examples("free")
-        base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the lscpu command'
-
-        for i in range(len(examples)):
-            base_prompt = base_prompt+f"\n\nExample {i+1}:\n"+examples[i]["response"]
+        if len(examples) > 0:
+            base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the free command:'
+            for i in range(len(examples)):
+                base_prompt = base_prompt+f"\n\nExample {i+1}:\n"+examples[i]["response"]
 
         if SYSTEM_ROLE_AVAILABLE:
             messages = [
@@ -278,9 +289,36 @@ Swap:{TEMPLATE_TOKEN:>14}{TEMPLATE_TOKEN:>12}{TEMPLATE_TOKEN:>12}
                 {"role":"user", "content":base_prompt},
                 {"role":"assistant", "content":""}
                 ]
-        messages.append({"role":"user", "content":"lscpu"})
-        messages.append({"role":"assistant", "content":template})
-        return self.fill_template(messages)
+        messages.append({"role":"user", "content":"COMMAND: free"})
+
+        return self.generate_from_messages(messages, max_new_tokens=1000)
+        '''
+#endregion
+
+#region last
+    def generate_last_response(self):
+        return self.generate_general_response("last")
+    '''
+    base_prompt = self.get_profile()
+    examples = self.get_examples("last")
+    if len(examples) > 0:
+        base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the last command:'
+        for i in range(len(examples)):
+            base_prompt = base_prompt+f"\n\nExample {i+1}:\n"+examples[i]["response"]
+
+    if SYSTEM_ROLE_AVAILABLE:
+        messages = [
+            {"role":"system", "content":base_prompt}
+            ]
+    else:
+        messages = [
+            {"role":"user", "content":base_prompt},
+            {"role":"assistant", "content":""}
+            ]
+    messages.append({"role":"user", "content":"COMMAND: last"})
+
+    return self.generate_from_messages(messages, max_new_tokens=1000)
+    '''
 #endregion
 
 #region support-classes

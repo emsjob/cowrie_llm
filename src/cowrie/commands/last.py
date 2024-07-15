@@ -37,17 +37,17 @@ class Command_last(HoneyPotCommand):
                 )
             )
 
-            self.write("\n")
-            self.write(
-                "wtmp begins {}\n".format(
-                    time.strftime(
-                        "%a %b %d %H:%M:%S %Y",
-                        time.localtime(
-                            self.protocol.logintime // (3600 * 24) * (3600 * 24) + 63
-                        ),
-                    )
+        self.write("\n")
+        self.write(
+            "wtmp begins {}\n".format(
+                time.strftime(
+                    "%a %b %d %H:%M:%S %Y",
+                    time.localtime(
+                        self.protocol.logintime // (3600 * 24) * (3600 * 24) + 63
+                    ),
                 )
             )
+        )
 
 
 commands["/usr/bin/last"] = Command_last

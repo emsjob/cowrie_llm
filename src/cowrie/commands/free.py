@@ -47,41 +47,44 @@ class Command_free(HoneyPotCommand):
         """
         print free statistics
         """
-
-        # Get real host memstats and add the calculated fields
-        raw_mem_stats = self.get_free_stats()
-        raw_mem_stats["calc_total_buffers_and_cache"] = (
-            raw_mem_stats["Buffers"] + raw_mem_stats["Cached"]
-        )
-        raw_mem_stats["calc_total_used"] = raw_mem_stats["MemTotal"] - (
-            raw_mem_stats["MemFree"] + raw_mem_stats["calc_total_buffers_and_cache"]
-        )
-        raw_mem_stats["calc_swap_used"] = (
-            raw_mem_stats["SwapTotal"] - raw_mem_stats["SwapFree"]
-        )
-
-        if fmt == "megabytes":
-            # Transform KB to MB
-            for key, value in raw_mem_stats.items():
-                raw_mem_stats[key] = int(value / 1000)
-
-        if fmt == "human":
-            magnitude = ["B", "M", "G", "T", "Z"]
-            human_mem_stats = {}
-            for key, value in raw_mem_stats.items():
-                current_magnitude = 0
-
-                # Keep dividing until we get a sane magnitude
-                while value >= 1000 and current_magnitude < len(magnitude):
-                    value = floor(float(value / 1000))
-                    current_magnitude += 1
-
-                # Format to string and append value with new magnitude
-                human_mem_stats[key] = str(f"{value:g}{magnitude[current_magnitude]}")
-
-            self.write(FREE_OUTPUT.format(**human_mem_stats))
+        if hasattr(self, "rh"):
+            self.write(self.rh.free_respond())
+            self.write("\n")
         else:
-            self.write(FREE_OUTPUT.format(**raw_mem_stats))
+            # Get real host memstats and add the calculated fields
+            raw_mem_stats = self.get_free_stats()
+            raw_mem_stats["calc_total_buffers_and_cache"] = (
+                raw_mem_stats["Buffers"] + raw_mem_stats["Cached"]
+            )
+            raw_mem_stats["calc_total_used"] = raw_mem_stats["MemTotal"] - (
+                raw_mem_stats["MemFree"] + raw_mem_stats["calc_total_buffers_and_cache"]
+            )
+            raw_mem_stats["calc_swap_used"] = (
+                raw_mem_stats["SwapTotal"] - raw_mem_stats["SwapFree"]
+            )
+
+            if fmt == "megabytes":
+                # Transform KB to MB
+                for key, value in raw_mem_stats.items():
+                    raw_mem_stats[key] = int(value / 1000)
+
+            if fmt == "human":
+                magnitude = ["B", "M", "G", "T", "Z"]
+                human_mem_stats = {}
+                for key, value in raw_mem_stats.items():
+                    current_magnitude = 0
+
+                    # Keep dividing until we get a sane magnitude
+                    while value >= 1000 and current_magnitude < len(magnitude):
+                        value = floor(float(value / 1000))
+                        current_magnitude += 1
+
+                    # Format to string and append value with new magnitude
+                    human_mem_stats[key] = str(f"{value:g}{magnitude[current_magnitude]}")
+
+                self.write(FREE_OUTPUT.format(**human_mem_stats))
+            else:
+                self.write(FREE_OUTPUT.format(**raw_mem_stats))
 
     def get_free_stats(self) -> dict[str, int]:
         """
