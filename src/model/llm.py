@@ -84,7 +84,7 @@ class LLM:
 #endregion
 
 #region ls
-    def generate_ls_response(self, cwd):
+    def generate_ls_response(self, cwd, history=None):
         def format_q(cmd, cwd):
             return f"Command: {cmd}\nCurrent directory: {cwd}"
 
@@ -93,12 +93,22 @@ class LLM:
         ex_q = [format_q(ex["cmd"], ex["cwd"]) for ex in examples]
         ex_a = [ex["response"] for ex in examples]
 
-        messages = [{"role":"system", "content":self.profile}]
+        base_prompt = self.profile + f"\n\nThe following {len(examples)} interactions are examples of the responses to the ls command."
+
+        messages = [{"role":"system", "content":base_prompt}]
         for i in range(len(examples)):
             messages.append({"role":"user", "content":ex_q[i]})
             messages.append({"role":"assistant", "content":ex_a[i]})
+
+        if history:
+            messages.append({"role":"system", "content":f"The following {len(history)} interactions are your past interactions with the user. Try to stay consistent with them."})
+            for event in history:
+                messages.append({"role":"user", "content":format_q(event["cmd"], event["path"])})
+                messages.append({"role":"assistant", "content":event["response"]})
         
         messages.append({"role":"user", "content":format_q("ls", cwd)})
+
+        
 
         return self.generate_from_messages(messages)
 #endregion
@@ -155,7 +165,7 @@ lo        Link encap:Local Loopback
         return self.generate_from_messages(messages, max_new_tokens=1000)
 #endregion
 
-#regionnetstat
+#region netstat
     def generate_netstat_response_template(self, messages):
         if self.num_connections is None:
             self.num_connections = np.random.randint(10, 30)
@@ -304,7 +314,6 @@ class NewWordSC(StoppingCriteria):
         res = torch.zeros_like(lasts, dtype=torch.bool)
         for i in range(lasts.shape[0]):
             decoded = self.tokenizer.decode(lasts[i])
-            #print(f"decoded: '{decoded}'")
             if " " in decoded:
                 res[i] = True
             elif "\n" in decoded:
@@ -354,13 +363,9 @@ class ServiceLLM(metaclass=SingletonMeta):
         while True:
             try:
                 request_id, method_name, args, kwargs = self.queue.get(timeout=1)
-                print("found:")
-                print(f"{request_id} {method_name} {args} {kwargs}")
                 result = getattr(llm, method_name)(*args, **kwargs)
-
                 result_pipe = self.result_pipes.pop(request_id, None)
-                print("retrieved result_pipe:")
-                print(result_pipe)
+
                 if result_pipe:
                     result_pipe.send(result)
                     result_pipe.close()
@@ -370,8 +375,6 @@ class ServiceLLM(metaclass=SingletonMeta):
                 continue
 
     def __getattr__(self, attr):
-        print("getting attribute")
-
         def func(*args, **kwargs):
             parent_conn, child_conn = mp.Pipe()
 
