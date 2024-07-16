@@ -100,6 +100,6 @@ class ResponseHandler():
     def file_contents_respond(self, path: str):
         resp = self.find_static_response("file_contents", "", path)
         if resp is None:
-            resp = "fake file contents in "+path
+            resp = self.llm.generate_file_contents(path)
         self.ch.enforce_file_contents(path, resp)
         return resp

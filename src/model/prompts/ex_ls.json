@@ -1,5 +1,12 @@
 [
     {"cmd": "ls", "cwd":"/var/www/mywebsite", "response":"assets  config  logs  public  scripts  templates"},
     {"cmd": "ls", "cwd":"/var/lib/mysql", "response":"backup  config  data  logs  scripts  tmp"},
-    {"cmd": "ls", "cwd":"/home/admin/projects/app", "response":"build  docs  node_modules  src  test  webpack.config.js"}
+    {"cmd": "ls", "cwd":"/home/admin/projects/app", "response":"build  docs  node_modules  src  test  webpack.config.js"},
+    {"cmd": "ls", "cwd":"/", "response":"bin dev home lib64 mnt root srv tmp boot etc lib lost+found opt run sys usr var"},
+    {"cmd": "ls", "cwd":"/home", "response":"admin alice gregory guest"},
+    {"cmd": "ls", "cwd":"/home/admin", "response":"Documents  Downloads  Music  Pictures  Videos"},
+    {"cmd": "ls", "cwd":"/home/admin/Documents", "response":"2024_report.docx 2023_report.docx draft_final_final.pdf"},
+    {"cmd": "ls", "cwd":"/var/log", "response":"alternatives.log dmesg kern.log messages syslog apt dpkg.log lastlog secure wtmp"},
+    {"cmd": "ls", "cwd":"/etc", "response":"apache2 cron.d fstab hosts ldap network ssh apt crontab group init.d logrotate.d pam.d sysctl.conf bash.bashrc default hostname issue motd passwd ufw"},
+    {"cmd": "ls", "cwd":"/etc/ssh", "response":"ssh_config sshd_config ssh_host_rsa_key ssh_host_rsa_key.pub"}
 ]

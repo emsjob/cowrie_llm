@@ -48,7 +48,7 @@ class LLM:
         print("prompt:")
         print(self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True))
         len_chat = tokenized_chat.shape[1]
-        outputs = self.model.generate(tokenized_chat, max_new_tokens=max_new_tokens)
+        outputs = self.model.generate(tokenized_chat, max_new_tokens=max_new_tokens, do_sample=True, num_beams=2, top_k=10, temperature=0.8)
         response = self.tokenizer.decode(outputs[0][len_chat:], skip_special_tokens=True)
         return response
 #endregion
@@ -108,16 +108,16 @@ class LLM:
 #endregion
 
 #region ls
-    def generate_ls_response(self, cwd, history=None):
-        def format_q(cmd, cwd):
-            return f"Command: {cmd}\nCurrent directory: {cwd}"
+    def format_ls_q(self, cmd, cwd):
+        return f"Command: {cmd}\nPath: {cwd}"
 
+    def generate_ls_response(self, cwd, history=None):
         #Maybe we should load all these by initialisation
         examples = self.get_examples("ls")
-        ex_q = [format_q(ex["cmd"], ex["cwd"]) for ex in examples]
+        ex_q = [self.format_ls_q(ex["cmd"], ex["cwd"]) for ex in examples]
         ex_a = [ex["response"] for ex in examples]
 
-        base_prompt = self.profile + f"\n\nThe following {len(examples)} interactions are examples of the responses to the ls command."
+        base_prompt = self.profile + f"\n\nMake sure that you generate more files in deeper directories. The following {len(examples)} interactions are examples of the responses to the ls command."
 
         messages = [{"role":"system", "content":base_prompt}]
         for i in range(len(examples)):
@@ -127,14 +127,40 @@ class LLM:
         if history:
             messages.append({"role":"system", "content":f"The following {len(history)} interactions are your past interactions with the user. Try to stay consistent with them."})
             for event in history:
-                messages.append({"role":"user", "content":format_q(event["cmd"], event["path"])})
+                messages.append({"role":"user", "content":self.format_ls_q(event["cmd"], event["path"])})
                 messages.append({"role":"assistant", "content":event["response"]})
         
-        messages.append({"role":"user", "content":format_q("ls", cwd)})
+        messages.append({"role":"user", "content":self.format_ls_q("ls", cwd)})
 
         
 
         return self.generate_from_messages(messages)
+#endregion
+
+#region file contents
+    def format_file_q(self, path):
+        return f"File contents in: {path}"
+
+    def generate_file_contents(self, path):
+        examples = self.get_examples("file_contents")
+
+        ex_q = [self.format_file_q(ex["path"]) for ex in examples]
+        ex_a = [ex["response"] for ex in examples]
+
+        base_prompt = self.profile + f"\n\nThe following {len(examples)} interactions are examples for content in different types of files."
+
+        messages = [{"role":"system", "content":base_prompt}]
+        for i in range(len(examples)):
+            messages.append({"role":"user", "content":ex_q[i]})
+            messages.append({"role":"assistant", "content":ex_a[i]})
+        
+
+        messages.append({"role":"user", "content":self.format_file_q(path)})
+
+        return self.generate_from_messages(messages, max_new_tokens=300)
+
+
+
 #endregion
 
 #region ifconfig
