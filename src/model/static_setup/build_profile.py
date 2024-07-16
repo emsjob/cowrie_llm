@@ -26,15 +26,15 @@ else:
 
 
 #build for lscpu
-"""
+
 try:
     lscpu_resp = static_cache[profile_hash]["lscpu"]
 except KeyError:
     if llm is None:
         llm = LLM()
     lscpu_resp = llm.generate_lscpu_response()
-"""
-raise SystemExit(0)
+
+#raise SystemExit(0)
 
 if llm is None:
     llm = LLM()
