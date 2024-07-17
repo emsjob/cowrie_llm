@@ -48,7 +48,7 @@ class LLM:
         print("prompt:")
         print(self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True))
         len_chat = tokenized_chat.shape[1]
-        outputs = self.model.generate(tokenized_chat, max_new_tokens=max_new_tokens, do_sample=True, num_beams=2, top_k=10, temperature=0.8)
+        outputs = self.model.generate(tokenized_chat, max_new_tokens=max_new_tokens, do_sample=True, num_beams=1, top_k=10, temperature=0.8)
         response = self.tokenizer.decode(outputs[0][len_chat:], skip_special_tokens=True)
         return response
 #endregion
@@ -355,6 +355,13 @@ unix  2      [ ]         DGRAM                    10108937 @0061b
 
     return self.generate_from_messages(messages, max_new_tokens=1000)
     '''
+#endregion
+
+#region name host
+    def generate_host_name(self):
+        messages = [{"role":"system", "content":self.profile},
+                    {"role":"user", "content":"Respond with a short and creative host name for this system, without spaces. Do not simply name it 'host' or something similar but consider the actual profile of the system."}]
+        return self.generate_from_messages(messages)
 #endregion
 
 #region support-classes

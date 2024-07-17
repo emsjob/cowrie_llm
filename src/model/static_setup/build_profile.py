@@ -7,6 +7,7 @@ import json
 import os
 
 TEXTCMDS_PATH = "/cowrie/cowrie-git/share/cowrie/txtcmds"
+HONEYFS_PATH = "/cowrie/cowrie-git/honeyfs"
 
 CACHE_PATH = "/cowrie/cowrie-git/src/model/static_setup/static_cache.json"
 with open(CACHE_PATH) as cache_file:
@@ -24,37 +25,46 @@ if os.environ["COWRIE_USE_LLM"].lower() == "true":
 else:
     llm = FakeLLM()
 
-
-#build for lscpu
-
-try:
-    lscpu_resp = static_cache[profile_hash]["lscpu"]
-except KeyError:
-    if llm is None:
-        llm = LLM()
-    lscpu_resp = llm.generate_lscpu_response()
-
-#raise SystemExit(0)
-
-if llm is None:
-    llm = LLM()
-lscpu_resp = llm.generate_lscpu_response()
+def get_resp(name, func_name):
+    global llm
+    try:
+        resp = static_cache[profile_hash][name]
+    except KeyError:
+        if llm is None:
+            llm = LLM()
+        resp = llm.__getattribute__(func_name)()
+    return resp
+    
+#region lscpu
+lscpu_resp = get_resp("lscpu", "generate_lscpu_response")
 
 LSCPU_PATH = TEXTCMDS_PATH+"/usr/bin/lscpu"
 
-with open(LSCPU_PATH, "r") as lscpu_file:
-    print("BEFORE: ", lscpu_file.read())
-
 with open(LSCPU_PATH, "w") as lscpu_file:
     lscpu_file.write(lscpu_resp)
+#endregion
 
-with open(LSCPU_PATH, "r") as lscpu_file:
-    print("AFTER: ", lscpu_file.read())
+#region hostname
+hostname_resp = get_resp("hostname", "generate_host_name")
+if hostname_resp[-1] != "\n":
+    hostname_resp = hostname_resp+"\n"
+print("Hostname:", hostname_resp)
+
+HOSTNAME_PATH = HONEYFS_PATH+"/etc/hostname"
+
+with open(HOSTNAME_PATH, "w") as hostname_file:
+    hostname_file.write(hostname_resp)
+#endregion
 
 
 
+#This might duplicate the config settings into one file
+#Potential bug, likely harmless if it works
+from cowrie.core.config import CowrieConfig, get_config_path
+print("old hostname:", CowrieConfig["honeypot"]["hostname"])
+CowrieConfig.set("honeypot", "hostname", hostname_resp)
+print("new hostname:", CowrieConfig["honeypot"]["hostname"])
 
-
-
-
+with open("/cowrie/cowrie-git/etc/cowrie.cfg", "w") as configfile:
+    CowrieConfig.write(configfile)
 
