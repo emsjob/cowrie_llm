@@ -320,7 +320,7 @@ Example format:
 
 #region lscpu
     def generate_lscpu_response(self):
-        return self.generate_general_response("lscpu")
+        return self.generate_general_response("lscpu", extra_info="\nModify the numbers in the right column to reasonable values for the size of the system.\n")
 #endregion
 
 #region free
