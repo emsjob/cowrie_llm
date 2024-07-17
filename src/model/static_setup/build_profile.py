@@ -5,6 +5,7 @@ from model.llm import LLM, FakeLLM
 import hashlib
 import json
 import os
+from cowrie.core.config import CowrieConfig
 
 TEXTCMDS_PATH = "/cowrie/cowrie-git/share/cowrie/txtcmds"
 HONEYFS_PATH = "/cowrie/cowrie-git/honeyfs"
@@ -48,23 +49,15 @@ with open(LSCPU_PATH, "w") as lscpu_file:
 hostname_resp = get_resp("hostname", "generate_host_name")
 if hostname_resp[-1] != "\n":
     hostname_resp = hostname_resp+"\n"
-print("Hostname:", hostname_resp)
+print("Generated hostname:", hostname_resp)
 
-HOSTNAME_PATH = HONEYFS_PATH+"/etc/hostname"
-
-with open(HOSTNAME_PATH, "w") as hostname_file:
-    hostname_file.write(hostname_resp)
+CowrieConfig.set("honeypot", "hostname", hostname_resp)
 #endregion
 
 
-
-#This might duplicate the config settings into one file
+#Save changes to config file
+#This might duplicate the config settings into one file, since original CowrieConfig is loaded from multiple
 #Potential bug, likely harmless if it works
-from cowrie.core.config import CowrieConfig, get_config_path
-print("old hostname:", CowrieConfig["honeypot"]["hostname"])
-CowrieConfig.set("honeypot", "hostname", hostname_resp)
-print("new hostname:", CowrieConfig["honeypot"]["hostname"])
-
 with open("/cowrie/cowrie-git/etc/cowrie.cfg", "w") as configfile:
     CowrieConfig.write(configfile)
 
