@@ -12,7 +12,7 @@ CACHE_PATH = "/cowrie/cowrie-git/src/model/static_setup/static_cache.json"
 with open(CACHE_PATH) as cache_file:
     static_cache = json.load(cache_file)
 
-PROFILE_PATH = "/cowrie/cowrie-git/src/model/prompts/profile.txt"
+PROFILE_PATH = "/cowrie/cowrie-git/src/model/prompts/large_profile.txt"
 with open(PROFILE_PATH) as profile_file:
     profile = profile_file.read()
 profile_bare = "".join(filter(str.isalpha, profile.lower()))
@@ -38,22 +38,34 @@ except KeyError:
 
 if llm is None:
     llm = LLM()
-lscpu_resp = llm.generate_lscpu_response()
 
+lscpu_resp = llm.generate_lscpu_response()
+if lscpu_resp[-1] != "\n":
+    lscpu_resp += "\n"
 LSCPU_PATH = TEXTCMDS_PATH+"/usr/bin/lscpu"
 
 with open(LSCPU_PATH, "r") as lscpu_file:
-    print("BEFORE: ", lscpu_file.read())
+    print("CPU BEFORE: ", lscpu_file.read())
 
 with open(LSCPU_PATH, "w") as lscpu_file:
     lscpu_file.write(lscpu_resp)
 
 with open(LSCPU_PATH, "r") as lscpu_file:
-    print("AFTER: ", lscpu_file.read())
+    print("CPU AFTER: ", lscpu_file.read())
 
+nproc_resp = llm.generate_nproc_response()
+if nproc_resp[-1] != "\n":
+    nproc_resp += "\n"
+NPROC_PATH = TEXTCMDS_PATH+"/usr/bin/nproc"
 
+with open(NPROC_PATH, "r") as nproc_file:
+    print("NPROC BEFORE: ", nproc_file.read())
 
+with open(NPROC_PATH, "w") as nproc_file:
+    nproc_file.write(nproc_resp)
 
+with open(NPROC_PATH, "r") as nproc_file:
+    print("NPROC AFTER: ", nproc_file.read())
 
 
 

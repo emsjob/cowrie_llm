@@ -34,7 +34,7 @@ class LLM:
         self.model = AutoModelForCausalLM.from_pretrained(model_name, token=token, device_map="auto", quantization_config=quantization_config)
 
     def get_profile(self):
-        with open(PROMPTS_PATH+"/profile.txt", "r") as prompt_file:
+        with open(PROMPTS_PATH+"/large_profile.txt", "r") as prompt_file:
             profile = prompt_file.read()
         return profile
 
@@ -48,7 +48,8 @@ class LLM:
         print("prompt:")
         print(self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True))
         len_chat = tokenized_chat.shape[1]
-        outputs = self.model.generate(tokenized_chat, max_new_tokens=max_new_tokens, do_sample=True, num_beams=2, top_k=10, temperature=0.8)
+        #outputs = self.model.generate(tokenized_chat, max_new_tokens=max_new_tokens, do_sample=True, num_beams=2, top_k=10, temperature=1.4)
+        outputs = self.model.generate(tokenized_chat, max_new_tokens=max_new_tokens, do_sample=True, num_beams=1, top_k=5, temperature=0.6)
         response = self.tokenizer.decode(outputs[0][len_chat:], skip_special_tokens=True)
         return response
 #endregion
@@ -84,15 +85,16 @@ class LLM:
 #endregion
 
 #region general response
-    def generate_general_response(self, cmd):
+    def generate_general_response(self, cmd, extra_info=None):
         base_prompt = self.profile
         examples = self.get_examples(cmd)
-
         if len(examples) > 0:
-            base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the {cmd} command:'
+            base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the {cmd} command. Do not just copy the example directly, rather adjust it appropriately.'
             for i in range(len(examples)):
                 base_prompt = base_prompt+f"\n\nExample {i+1}:\n"+examples[i]["response"]
 
+        if extra_info:
+            basse_prompt = base_prompt + extra_info
         if SYSTEM_ROLE_AVAILABLE:
             messages = [
                 {"role":"system", "content":base_prompt}
@@ -192,30 +194,7 @@ lo        Link encap:Local Loopback
 
     def generate_ifconfig_response(self, use_template=False):
         return self.generate_general_response("ifconfig")
-        '''
-        base_prompt = self.profile
-        examples = self.get_examples("ifconfig")
 
-        if len(examples) > 0:
-            base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the ifconfig command:'
-            for i in range(len(examples)):
-                base_prompt = base_prompt+f"\n\nExample {i+1}:\n"+examples[i]["response"]
-
-        if SYSTEM_ROLE_AVAILABLE:
-            messages = [
-                {"role":"system", "content":base_prompt}
-                ]
-        else:
-            messages = [
-                {"role":"user", "content":base_prompt},
-                {"role":"assistant", "content":""}
-                ]
-        messages.append({"role":"user", "content":"COMMAND: ifconfig"})
-
-        if use_template:
-            return self.generate_ifconfig_response_template(messages)
-        return self.generate_from_messages(messages, max_new_tokens=1000)
-        '''
 #endregion
 
 #region netstat
@@ -252,6 +231,67 @@ unix  2      [ ]         DGRAM                    10108937 @0061b
 
     def generate_netstat_response(self, use_template=False):
         return self.generate_general_response("netstat")
+        prompt = """
+Generate a netstat response with the following format:
+
+1. Number of active internet connections
+2. A list of dictionaries representing each connection with the following keys:
+   - local_address
+   - local_port
+   - foreign_address
+   - foreign_port
+   - state
+
+3. A list of dictionaries representing UNIX domain sockets with the following keys:
+   - refcnt
+   - flags
+   - type
+   - inode
+   - path
+
+Example format:
+{
+    "num_connections": 2,
+    "connections": [
+        {
+            "local_address": "localhost",
+            "local_port": "22",
+            "foreign_address": "remotehost",
+            "foreign_port": "12345",
+            "state": "ESTABLISHED"
+        },
+        {
+            "local_address": "localhost",
+            "local_port": "80",
+            "foreign_address": "remotehost2",
+            "foreign_port": "54321",
+            "state": "CLOSE_WAIT"
+        }
+    ],
+    "unix_sockets": [
+        {
+            "refcnt": "2",
+            "flags": "[ ACC ]",
+            "type": "STREAM",
+            "inode": "8969",
+            "path": "/var/run/acpid.socket"
+        },
+        {
+            "refcnt": "2",
+            "flags": "[ ACC ]",
+            "type": "STREAM",
+            "inode": "6807",
+            "path": "@/com/ubuntu/upstart"
+        }
+    ]
+}
+"""
+        print(f"NETSTAT PROMPT: {prompt}")
+        response = self.llm.generate_from_messages(prompt)
+        print(f"NETSTAT RESPONSE: {response}")
+        netstat_data = json.loads(response)
+        return netstat_data
+
         '''
         base_prompt = self.profile
         examples = self.get_examples("netstat")
@@ -281,80 +321,21 @@ unix  2      [ ]         DGRAM                    10108937 @0061b
 #region lscpu
     def generate_lscpu_response(self):
         return self.generate_general_response("lscpu")
-        '''
-        base_prompt = self.get_profile()
-        examples = self.get_examples("lscpu")
-
-        base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the lscpu command'
-
-        for i in range(len(examples)):
-            base_prompt = base_prompt+f"\n\nExample {i+1}:\n"+examples[i]["response"]
-
-        if SYSTEM_ROLE_AVAILABLE:
-            messages = [
-                {"role":"system", "content":base_prompt}
-                ]
-        else:
-            messages = [
-                {"role":"user", "content":base_prompt},
-                {"role":"assistant", "content":""}
-                ]
-        messages.append({"role":"user", "content":"lscpu"})
-        messages.append({"role":"assistant", "content":template})
-        return self.generate_from_messages(messages, max_new_tokens=1000)
-        '''
 #endregion
 
 #region free
     def generate_free_response(self):
         return self.generate_general_response("free")
-        '''
-        base_prompt = self.get_profile()
-        examples = self.get_examples("free")
-        if len(examples) > 0:
-            base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the free command:'
-            for i in range(len(examples)):
-                base_prompt = base_prompt+f"\n\nExample {i+1}:\n"+examples[i]["response"]
-
-        if SYSTEM_ROLE_AVAILABLE:
-            messages = [
-                {"role":"system", "content":base_prompt}
-                ]
-        else:
-            messages = [
-                {"role":"user", "content":base_prompt},
-                {"role":"assistant", "content":""}
-                ]
-        messages.append({"role":"user", "content":"COMMAND: free"})
-
-        return self.generate_from_messages(messages, max_new_tokens=1000)
-        '''
 #endregion
 
 #region last
     def generate_last_response(self):
         return self.generate_general_response("last")
-    '''
-    base_prompt = self.get_profile()
-    examples = self.get_examples("last")
-    if len(examples) > 0:
-        base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the last command:'
-        for i in range(len(examples)):
-            base_prompt = base_prompt+f"\n\nExample {i+1}:\n"+examples[i]["response"]
+#endregion
 
-    if SYSTEM_ROLE_AVAILABLE:
-        messages = [
-            {"role":"system", "content":base_prompt}
-            ]
-    else:
-        messages = [
-            {"role":"user", "content":base_prompt},
-            {"role":"assistant", "content":""}
-            ]
-    messages.append({"role":"user", "content":"COMMAND: last"})
-
-    return self.generate_from_messages(messages, max_new_tokens=1000)
-    '''
+#region nproc
+    def generate_nproc_response(self):
+        return self.generate_general_response("nproc", extra_info="\nA large system have 16 or 32 and a small system 2 or 4.\n")
 #endregion
 
 #region support-classes
