@@ -50,7 +50,7 @@ class LLM:
         print("prompt:")
         print(self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True))
         len_chat = tokenized_chat.shape[1]
-        outputs = self.model.generate(tokenized_chat, max_new_tokens=max_new_tokens, do_sample=True, num_beams=1, top_k=5, temperature=0.6)
+        outputs = self.model.generate(tokenized_chat, max_new_tokens=max_new_tokens, do_sample=True, num_beams=1, top_k=5, temperature=0.8)
         response = self.tokenizer.decode(outputs[0][len_chat:], skip_special_tokens=True)
         return response
 #endregion
@@ -321,7 +321,7 @@ Example format:
 
 #region free
     def generate_free_response(self):
-        return self.generate_general_response("free")
+        return self.generate_general_response("free", extra_info="\nEnsure that the formatting and spacing is the same as in the example, with leading spaces and that each column should be right aligned.\n")
 #endregion
 
 #region last
@@ -337,10 +337,10 @@ Example format:
         return self.generate_general_response("nproc", extra_info="\nA large system have 16 or 32 and a small system 2 or 4.\n")
 
     def generate_df_response(self):
-        return self.generate_general_response("df")
+        return self.generate_general_response("df", extra_info="\nDo not use anything other than the english language.\n")
 #endregion
 
-#region name host
+#region hostname
     def generate_host_name(self):
         messages = [{"role":"system", "content":self.profile},
                     {"role":"user", "content":"Respond with a short and creative host name for this system, without spaces. Do not simply name it 'host' or something similar but consider the actual profile of the system."}]
