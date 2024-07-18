@@ -69,7 +69,7 @@ with open(DF_PATH, "r") as df_file:
     print("DF BEFORE: ", df_file.read())
 
 with open(DF_PATH, "w") as df_file:
-    df_file.write(df_file)
+    df_file.write(df_resp)
 
 with open(DF_PATH, "r") as df_file:
     print("DF AFTER: ", df_file.read())
