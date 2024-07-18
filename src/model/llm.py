@@ -13,13 +13,15 @@ TEMPLATE_TOKEN = "<unk>"
 TEMPLATE_TOKEN_ID = 0
 SYSTEM_ROLE_AVAILABLE = True
 
+MODEL_NAME = "microsoft/Phi-3-mini-4k-instruct"
+#MODEL_NAME = "meta-llama/Meta-Llama-3-8B-Instruct"
 
 with open(f"{RESPONSE_PATH}/cmd_lookup.json", "r") as f:
     LOOKUPS = json.load(f)
 
 class LLM:
 #region base
-    def __init__(self, model_name="microsoft/Phi-3-mini-4k-instruct"):
+    def __init__(self, model_name=MODEL_NAME):
         with open(f"{RESPONSE_PATH}/token.txt", "r") as f:
             token = f.read().rstrip()
 
@@ -48,7 +50,6 @@ class LLM:
         print("prompt:")
         print(self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True))
         len_chat = tokenized_chat.shape[1]
-        #outputs = self.model.generate(tokenized_chat, max_new_tokens=max_new_tokens, do_sample=True, num_beams=2, top_k=10, temperature=1.4)
         outputs = self.model.generate(tokenized_chat, max_new_tokens=max_new_tokens, do_sample=True, num_beams=1, top_k=5, temperature=0.6)
         response = self.tokenizer.decode(outputs[0][len_chat:], skip_special_tokens=True)
         return response
@@ -88,6 +89,8 @@ class LLM:
     def generate_general_response(self, cmd, extra_info=None):
         base_prompt = self.profile
         examples = self.get_examples(cmd)
+        resp_str = examples[0]["response"]
+        num_tokens = 1.1 * len(self.tokenizer.tokenize(resp_str))
         if len(examples) > 0:
             base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the {cmd} command. Do not just copy the example directly, rather adjust it appropriately.'
             for i in range(len(examples)):
@@ -106,7 +109,7 @@ class LLM:
                 ]
         messages.append({"role":"user", "content":f"COMMAND: {cmd}"})
 
-        return self.generate_from_messages(messages, max_new_tokens=1000)
+        return self.generate_from_messages(messages, max_new_tokens=num_tokens)
 #endregion
 
 #region ls
@@ -318,11 +321,6 @@ Example format:
         '''
 #endregion
 
-#region lscpu
-    def generate_lscpu_response(self):
-        return self.generate_general_response("lscpu", extra_info="\nModify the numbers in the right column to reasonable values for the size of the system.\n")
-#endregion
-
 #region free
     def generate_free_response(self):
         return self.generate_general_response("free")
@@ -333,9 +331,15 @@ Example format:
         return self.generate_general_response("last")
 #endregion
 
-#region nproc
+#region staticcmds
+    def generate_lscpu_response(self):
+        return self.generate_general_response("lscpu", extra_info="\nModify the numbers in the right column to reasonable values for the size of the system.\n")
+
     def generate_nproc_response(self):
         return self.generate_general_response("nproc", extra_info="\nA large system have 16 or 32 and a small system 2 or 4.\n")
+
+    def generate_df_response(self):
+        return self.generate_general_response("df")
 #endregion
 
 #region support-classes
@@ -389,7 +393,7 @@ class SingletonMeta(type):
 
 
 class ServiceLLM(metaclass=SingletonMeta):
-    def __init__(self, model_name="microsoft/Phi-3-mini-4k-instruct"):
+    def __init__(self, model_name=MODEL_NAME):
         print("Starting LLM service")
         self.model_name=model_name
 

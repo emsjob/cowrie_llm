@@ -67,6 +67,20 @@ with open(NPROC_PATH, "w") as nproc_file:
 with open(NPROC_PATH, "r") as nproc_file:
     print("NPROC AFTER: ", nproc_file.read())
 
+df_resp = llm.generate_df_response()
+if df_resp[-1] != "\n":
+    df_resp += "\n"
+DF_PATH = TEXTCMDS_PATH+"/bin/df"
+
+with open(DF_PATH, "r") as df_file:
+    print("DF BEFORE: ", df_file.read())
+
+with open(DF_PATH, "w") as df_file:
+    df_file.write(df_file)
+
+with open(DF_PATH, "r") as df_file:
+    print("DF AFTER: ", df_file.read())
+
 
 
 
