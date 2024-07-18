@@ -61,9 +61,11 @@ class ResponseHandler():
         return resp
         
     def ifconfig_respond(self):
-        #resp = self.find_static_response("ifconfig")
-        #if resp is None:
-        resp = self.llm.generate_ifconfig_response()
+        resp = self.find_static_response("ifconfig")
+        if resp is None:
+            resp = self.llm.generate_ifconfig_response()
+            self.response_dict["ifconfig"] = {"":resp}
+
         print("ifconfig RESPONSE!!")
         print(resp)
         print("------")
