@@ -38,13 +38,14 @@ def get_resp(name, func_name):
     
 #region lscpu
 lscpu_resp = get_resp("lscpu", "generate_lscpu_response")
+if lscpu_resp[-1] != "\n":
+    lscpu_resp += "\n"
 
 LSCPU_PATH = TEXTCMDS_PATH+"/usr/bin/lscpu"
 
 with open(LSCPU_PATH, "w") as lscpu_file:
     lscpu_file.write(lscpu_resp)
 #endregion
-
 
 nproc_resp = get_resp("nproc", "generate_nproc_response")
 if nproc_resp[-1] != "\n":
