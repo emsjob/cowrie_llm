@@ -402,17 +402,21 @@ class fseditCmd(cmd.Cmd):
         """
 
         args = arguments.split()
-
-        if len(args) < 1 or len(args) > 2:
+        print("args:",args)
+        if len(args) < 1:
             print("Usage: rm [-r] <target>")
             return
 
         if len(args) == 2 and args[0] != "-r":
             print("Usage: rm [-r] <target>")
             return
+        
 
         if len(args) == 1:
             target_path = resolve_reference(self.pwd, args[0])
+        elif len(args) > 2:
+            for i in range(1, len(args)):
+                self.do_rm(f"-r {args[i]}")
         else:
             target_path = resolve_reference(self.pwd, args[1])
 

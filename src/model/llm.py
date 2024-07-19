@@ -141,8 +141,6 @@ class LLM:
         
         messages.append({"role":"user", "content":self.format_ls_q("ls", cwd)})
 
-        
-
         return self.generate_from_messages(messages)
 #endregion
 

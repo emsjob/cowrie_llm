@@ -30,6 +30,9 @@ class CowrieHandler():
         
         perm = stat.S_IFREG |stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
         for item in items:
+            "make sure item is a item and not a path, if path select last"
+            item = item.split("/")[-1]
+
             item_path = path+"/"+item
             if not self.fs.exists(item_path):
                 if is_file(item):
