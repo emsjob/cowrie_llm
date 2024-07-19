@@ -5,6 +5,7 @@ if os.environ["COWRIE_USE_LLM"].lower() == "true":
     import torch
 import json
 import numpy as np
+import time
 
 RESPONSE_PATH = "/cowrie/cowrie-git/src/model"
 PROMPTS_PATH = "/cowrie/cowrie-git/src/model/prompts"
@@ -50,8 +51,11 @@ class LLM:
         print("prompt:")
         print(self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True))
         len_chat = tokenized_chat.shape[1]
-        outputs = self.model.generate(tokenized_chat, max_new_tokens=max_new_tokens, do_sample=True, num_beams=1, top_k=5, temperature=0.8)
+        gen_start_time = time.time()
+        outputs = self.model.generate(tokenized_chat, max_new_tokens=max_new_tokens, do_sample=True, num_beams=1, top_k=5, temperature=0.6)
+        gen_end_time = time.time()
         response = self.tokenizer.decode(outputs[0][len_chat:], skip_special_tokens=True)
+        print(f"LLM GENERATION TIME: {gen_end_time - gen_start_time}")
         return response
 #endregion
 
@@ -90,7 +94,7 @@ class LLM:
         base_prompt = self.profile
         examples = self.get_examples(cmd)
         resp_str = examples[0]["response"]
-        num_tokens = 1.1 * len(self.tokenizer.tokenize(resp_str))
+        num_tokens = 1.2 * len(self.tokenizer.tokenize(resp_str))
         if len(examples) > 0:
             base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the {cmd} command. Do not just copy the example directly, rather adjust it appropriately.'
             for i in range(len(examples)):
@@ -323,23 +327,120 @@ Example format:
 
 #region free
     def generate_free_response(self):
-        return self.generate_general_response("free", extra_info="\nEnsure that the formatting and spacing is the same as in the example, with leading spaces and that each column should be right aligned.\n")
+        response = self.generate_general_response("free").split()
+        print(f"FREE RESPONSE: {response}")
+        for idx, val in enumerate(response):
+            print(f"idx: {idx}, val: {val}")
+
+        mem_start_index = response.index("Mem:") + 1
+        swap_start_index = response.index("Swap:") + 1 if "Swap:" in response else None
+
+        mem_values = response[mem_start_index:mem_start_index + 6]
+        if swap_start_index:
+            swap_values = response[swap_start_index:swap_start_index + 3]
+        else:
+            swap_values = ["0", "0", "0"]
+
+        values = {
+            "MemTotal": mem_values[0],
+            "calc_total_used": str(int(mem_values[0]) - int(mem_values[2]) - int(mem_values[4])),
+            "MemFree": mem_values[2],
+            "Shmem": mem_values[3],
+            "calc_total_buffers_and_cache": str(int(mem_values[4])),
+            "MemAvailable": mem_values[5],
+            "SwapTotal": swap_values[0],
+            "calc_swap_used": str(int(swap_values[0]) - int(swap_values[2])),
+            "SwapFree": swap_values[2],
+        }
+        template = """              total        used        free      shared  buff/cache   available
+Mem:{MemTotal:>15}{calc_total_used:>12}{MemFree:>12}{Shmem:>12}{calc_total_buffers_and_cache:>12}{MemAvailable:>12}
+Swap:{SwapTotal:>14}{calc_swap_used:>12}{SwapFree:>12}
+"""
+        filled_template = template.format(**values).rstrip()
+        return filled_template
 #endregion
 
 #region last
     def generate_last_response(self):
-        return self.generate_general_response("last")
+        response = self.generate_general_response("last").split()
+        print(f"LAST RESPONSE: {response}")
+        return response
 #endregion
 
 #region staticcmds
     def generate_lscpu_response(self):
-        return self.generate_general_response("lscpu", extra_info="\nModify the numbers in the right column to reasonable values for the size of the system.\n")
+        #return self.generate_general_response("lscpu", extra_info="\nModify the numbers in the right column to reasonable values for the size of the system.\n"
+        response = self.generate_general_response("lscpu", extra_info="\nChange the values to reasonable ones considering the size of the system.\n").split("\n")
+        values = {}
+        for line in response:
+            if line.strip():
+                key, value = line.split(":", 1)
+                values[key.strip()] = value.strip()
+
+        template = """Architecture:          {Architecture}
+CPU op-mode(s):        {CPU op-mode(s)}
+Byte Order:            {Byte Order}
+CPU(s):                {CPU(s)}
+On-line CPU(s) list:   {On-line CPU(s) list}
+Thread(s) per core:    {Thread(s) per core}
+Core(s) per socket:    {Core(s) per socket}
+Socket(s):             {Socket(s)}
+NUMA node(s):          {NUMA node(s)}
+Vendor ID:             {Vendor ID}
+CPU family:            {CPU family}
+Model:                 {Model}
+Stepping:              {Stepping}
+CPU MHz:               {CPU MHz}
+BogoMIPS:              {BogoMIPS}
+Hypervisor vendor:     {Hypervisor vendor}
+Virtualization type:   {Virtualization type}
+L1d cache:             {L1d cache}
+L1i cache:             {L1i cache}
+L2 cache:              {L2 cache}
+NUMA node0 CPU(s):     {NUMA node0 CPU(s)}
+        """
+
+        filled_template = template.format(**values).rstrip()
+        return filled_template
 
     def generate_nproc_response(self):
         return self.generate_general_response("nproc", extra_info="\nA large system have 16 or 32 and a small system 2 or 4.\n")
 
     def generate_df_response(self):
-        return self.generate_general_response("df", extra_info="\nDo not use anything other than the english language.\n")
+        response = self.generate_general_response("df", extra_info="\nDo not use anything other than the english language.\n").split()
+        print(f"DF RESPONSE: {response}")
+        for idx, val in enumerate(response):
+            print(f"idx: {idx}, val: {val}")
+
+        response = response[6:]
+        columns_per_row = 6
+        num_rows = len(response) // columns_per_row
+        filesystems = []
+        for i in range(1, num_rows):
+            start_index = i * columns_per_row + 1
+            print(f"START INDEX: {start_index}")
+            filesystem_info = {
+                "Filesystem": response[start_index],
+                "Size": response[start_index + 1],
+                "Used": response[start_index + 2],
+                "Avail": response[start_index + 3],
+                "Use%": response[start_index + 4],
+                "Mounted_on": " ".join(response[start_index + 5:start_index + 6])
+            }
+            filesystems.append(filesystem_info)
+
+        template = """Filesystem                                              Size  Used Avail Use% Mounted on
+{rows}
+"""
+
+        rows = ""
+        for fs in filesystems:
+            row = "{Filesystem:<52}{Size:>5} {Used:>5} {Avail:>5} {Use%:>5} {Mounted_on:<}\n".format(**fs)
+            rows += row
+
+        filled_template = template.format(rows=rows).rstrip()
+        return filled_template
+
 #endregion
 
 #region hostname
