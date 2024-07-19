@@ -143,14 +143,10 @@ class GeneralManager(metaclass=SingletonMeta):
         self.response_cache = defaultdict(def_value)
 
     def find_general_response(self, cmd, flags="", path=""):
-        print("Searching for", cmd, flags, path)
-        print("in:")
-        print(dict(self.response_cache))
         if not path:
             return self.response_cache[cmd][flags]
         else:
-            res = self.response_cache[cmd][flags][path]
-            print("found response:", res)
-            return res
+            return self.response_cache[cmd][flags][path]
+            
 
     
