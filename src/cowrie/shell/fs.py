@@ -111,6 +111,7 @@ class HoneyPotFilesystem:
 
         try:
             with open(CowrieConfig.get("shell", "filesystem"), "rb") as f:
+                print("loaded fs from:", CowrieConfig.get("shell", "filesystem"))
                 self.fs = pickle.load(f)
         except UnicodeDecodeError:
             with open(CowrieConfig.get("shell", "filesystem"), "rb") as f:

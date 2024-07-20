@@ -77,6 +77,8 @@ class Command_ls(HoneyPotCommand):
                     obj[10] = False
                 except IndexError:
                     is_llm = False
+                except TypeError:
+                    is_llm = False
                 if is_llm:
                     self.rh.ls_respond(path)
 
@@ -87,6 +89,8 @@ class Command_ls(HoneyPotCommand):
                         is_llm = obj[10]
                         obj[10] = False
                     except IndexError:
+                        is_llm = False
+                    except TypeError:
                         is_llm = False
                     if is_llm:
                         self.rh.ls_respond(path)

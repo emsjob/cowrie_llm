@@ -448,6 +448,13 @@ NUMA node0 CPU(s):     {NUMA node0 CPU(s)}
         return self.generate_from_messages(messages)
 #endregion
 
+#region users
+    def generate_users(self):
+        messages = [{"role":"system", "content":self.profile},
+                    {"role":"user", "content":"List the account name of users that might exist on the system."}]
+        return self.generate_from_messages(messages)
+#endregion
+
 #region support-classes
 class FakeLLM:
     def __init__(self, *args, **kwargs):

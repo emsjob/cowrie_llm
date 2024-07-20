@@ -5,7 +5,11 @@ from model.llm import LLM, FakeLLM
 import hashlib
 import json
 import os
+from os import path
 from cowrie.core.config import CowrieConfig
+from cowrie.scripts import fsctl
+import re
+
 
 TEXTCMDS_PATH = "/cowrie/cowrie-git/share/cowrie/txtcmds"
 HONEYFS_PATH = "/cowrie/cowrie-git/honeyfs"
@@ -53,6 +57,7 @@ with open(LSCPU_PATH, "r") as lscpu_file:
     print("LSCPU AFTER: ", lscpu_file.read())
 #endregion
 
+#region nproc
 nproc_resp = get_resp("nproc", "generate_nproc_response")
 if nproc_resp[-1] != "\n":
     nproc_resp += "\n"
@@ -66,7 +71,9 @@ with open(NPROC_PATH, "w") as nproc_file:
 
 with open(NPROC_PATH, "r") as nproc_file:
     print("NPROC AFTER: ", nproc_file.read())
+#endregion
 
+#region df
 df_resp = get_resp("df", "generate_df_response")
 if df_resp[-1] != "\n":
     df_resp += "\n"
@@ -80,8 +87,7 @@ with open(DF_PATH, "w") as df_file:
 
 with open(DF_PATH, "r") as df_file:
     print("DF AFTER: ", df_file.read())
-
-
+#endregion
 
 #region hostname
 hostname_resp = get_resp("hostname", "generate_host_name")
@@ -92,6 +98,26 @@ print("Generated hostname:", hostname_resp)
 CowrieConfig.set("honeypot", "hostname", hostname_resp)
 #endregion
 
+#region users
+users = llm.generate_users()
+print("generated users:", users) 
+users = re.split('\n| |\t|,|\'|\"|`', users)
+fscmd = fsctl.fseditCmd("/cowrie/cowrie-git/share/cowrie/fs.pickle")
+fscmd.pickle_file_path = "/cowrie/cowrie-git/share/cowrie/fs2.pickle"
+
+fscmd.do_rm("-r /home")
+fscmd.do_mkdir("/home false")
+for user in users:
+    if user:
+        user = user.split("/")[-1]
+        print("adding user:", user)
+        fscmd.do_mkdir(f"/home/{user} llm")
+
+#Unnecessary?
+fscmd.save_pickle()
+
+CowrieConfig.set("shell", "filesystem", "${honeypot:share_path}/fs2.pickle")
+#endregion
 
 #Save changes to config file
 #This might duplicate the config settings into one file, since original CowrieConfig is loaded from multiple

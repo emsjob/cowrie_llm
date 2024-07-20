@@ -783,6 +783,26 @@ def run():
     else:
         fseditCmd(pickle_file_name).cmdloop()
 
+def run_backdoor(args):
+    for i in range(len(args)):
+        print(f"{i}: {args[i]}")
+
+    if len(args) < 2 or len(args) > 3:
+        print(
+            "Usage: {} <fs.pickle> [command]".format(os.path.basename(
+                args[0],
+            ))
+        )
+        sys.exit(1)
+
+    pickle_file_name = args[1].strip()
+    print(pickle_file_name)
+
+    if len(sys.argv) == 3:
+        fseditCmd(pickle_file_name).onecmd(args[2])
+    else:
+        fseditCmd(pickle_file_name).cmdloop()
+
 
 if __name__ == "__main__":
     run()
