@@ -182,6 +182,7 @@ unix  3      [ ]         STREAM     CONNECTED     8619     @/com/ubuntu/upstart\
 
     def do_netstat_llm(self) -> None:
         self.write(self.rh.netstat_respond())
+        self.write("\n")
 
     def call(self) -> None:
         self.show_all = False

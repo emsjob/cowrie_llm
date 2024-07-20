@@ -14,8 +14,8 @@ TEMPLATE_TOKEN = "<unk>"
 TEMPLATE_TOKEN_ID = 0
 SYSTEM_ROLE_AVAILABLE = True
 
-MODEL_NAME = "microsoft/Phi-3-mini-4k-instruct"
-#MODEL_NAME = "meta-llama/Meta-Llama-3-8B-Instruct"
+#MODEL_NAME = "microsoft/Phi-3-mini-4k-instruct"
+MODEL_NAME = "meta-llama/Meta-Llama-3-8B-Instruct"
 
 with open(f"{RESPONSE_PATH}/cmd_lookup.json", "r") as f:
     LOOKUPS = json.load(f)
@@ -165,9 +165,6 @@ class LLM:
         messages.append({"role":"user", "content":self.format_file_q(path)})
 
         return self.generate_from_messages(messages, max_new_tokens=300)
-
-
-
 #endregion
 
 #region ifconfig
@@ -236,91 +233,6 @@ unix  2      [ ]         DGRAM                    10108937 @0061b
 
     def generate_netstat_response(self, use_template=False):
         return self.generate_general_response("netstat")
-        prompt = """
-Generate a netstat response with the following format:
-
-1. Number of active internet connections
-2. A list of dictionaries representing each connection with the following keys:
-   - local_address
-   - local_port
-   - foreign_address
-   - foreign_port
-   - state
-
-3. A list of dictionaries representing UNIX domain sockets with the following keys:
-   - refcnt
-   - flags
-   - type
-   - inode
-   - path
-
-Example format:
-{
-    "num_connections": 2,
-    "connections": [
-        {
-            "local_address": "localhost",
-            "local_port": "22",
-            "foreign_address": "remotehost",
-            "foreign_port": "12345",
-            "state": "ESTABLISHED"
-        },
-        {
-            "local_address": "localhost",
-            "local_port": "80",
-            "foreign_address": "remotehost2",
-            "foreign_port": "54321",
-            "state": "CLOSE_WAIT"
-        }
-    ],
-    "unix_sockets": [
-        {
-            "refcnt": "2",
-            "flags": "[ ACC ]",
-            "type": "STREAM",
-            "inode": "8969",
-            "path": "/var/run/acpid.socket"
-        },
-        {
-            "refcnt": "2",
-            "flags": "[ ACC ]",
-            "type": "STREAM",
-            "inode": "6807",
-            "path": "@/com/ubuntu/upstart"
-        }
-    ]
-}
-"""
-        print(f"NETSTAT PROMPT: {prompt}")
-        response = self.llm.generate_from_messages(prompt)
-        print(f"NETSTAT RESPONSE: {response}")
-        netstat_data = json.loads(response)
-        return netstat_data
-
-        '''
-        base_prompt = self.profile
-        examples = self.get_examples("netstat")
-
-        if len(examples) > 0:
-            base_prompt = base_prompt + f'\n\nHere {"are a few examples" if len(examples) > 1 else "is an example"} of a response to the netstat command:'
-            for i in range(len(examples)):
-                base_prompt = base_prompt+f"\n\nExample {i+1}:\n"+examples[i]["response"]
-
-        if SYSTEM_ROLE_AVAILABLE:
-            messages = [
-                {"role":"system", "content":base_prompt}
-                ]
-        else:
-            messages = [
-                {"role":"user", "content":base_prompt},
-                {"role":"assistant", "content":""}
-                ]
-        messages.append({"role":"user", "content":"COMMAND: netstat"})
-    
-        if use_template:
-            return self.generate_netstat_response_template(messages)
-        return self.generate_from_messages(messages, max_new_tokens=1000)
-        '''
 #endregion
 
 #region free
@@ -360,14 +272,13 @@ Swap:{SwapTotal:>14}{calc_swap_used:>12}{SwapFree:>12}
 
 #region last
     def generate_last_response(self):
-        response = self.generate_general_response("last").split()
+        response = self.generate_general_response("last")
         print(f"LAST RESPONSE: {response}")
         return response
 #endregion
 
 #region staticcmds
     def generate_lscpu_response(self):
-        #return self.generate_general_response("lscpu", extra_info="\nModify the numbers in the right column to reasonable values for the size of the system.\n"
         response = self.generate_general_response("lscpu", extra_info="\nChange the values to reasonable ones considering the size of the system.\n").split("\n")
         values = {}
         for line in response:
