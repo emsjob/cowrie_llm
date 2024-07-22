@@ -109,7 +109,10 @@ class ResponseHandler():
         return resp
 
     def free_respond(self):
-        resp = self.llm.generate_free_response()
+        resp = self,find_response("free")
+        if not resp:
+            resp = self.llm.generate_free_response()
+            self.record_response_gm("free", resp)
         return resp
 
     def lscpu_respond(self):
@@ -120,7 +123,10 @@ class ResponseHandler():
         return resp
 
     def last_respond(self):
-        resp = self.llm.generate_last_response()
+        resp = self.find_response("last")
+        if not resp:
+            resp = self.llm.generate_last_response()
+            self.record_response_gm("last", resp)
         return resp
             
     def file_contents_respond(self, path: str):

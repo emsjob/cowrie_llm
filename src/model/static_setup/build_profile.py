@@ -106,7 +106,7 @@ CowrieConfig.set("honeypot", "hostname", hostname_resp)
 
 #region users
 users = llm.generate_users()
-print("generated users:", users) 
+print("generated users:", users)
 users = re.split('\n| |\t|,|\'|\"|`', users)
 fscmd = fsctl.fseditCmd("/cowrie/cowrie-git/share/cowrie/fs.pickle")
 fscmd.pickle_file_path = "/cowrie/cowrie-git/share/cowrie/fs2.pickle"
