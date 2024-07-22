@@ -64,10 +64,7 @@ for line in lscpu_resp.splitlines():
         cpu_count = line.split(":")[1].strip()
         break
 
-#nproc_resp = get_resp("nproc", "generate_nproc_response")
 nproc_resp = cpu_count
-
-nproc_resp = get_resp("nproc", "generate_nproc_response")
 if nproc_resp[-1] != "\n":
     nproc_resp += "\n"
 NPROC_PATH = TEXTCMDS_PATH+"/usr/bin/nproc"
