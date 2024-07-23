@@ -58,13 +58,11 @@ class ResponseHandler():
             self.gm.response_cache[cmd][flags][path] = resp
         else:
             self.gm.response_cache[cmd][flags] = resp
-
     
     def get_cmds_history(self, cmds):
         print("history:\n", self.history)
         return [entry for entry in self.history if entry["cmd"] in cmds]
             
-    
     def ls_respond(self,
                    path: str):
         resp = self.find_response("ls", "", path)
@@ -73,24 +71,14 @@ class ResponseHandler():
             ls_history = self.get_cmds_history(["ls"])
             resp = self.llm.generate_ls_response(path, history=ls_history)
             self.record_response_gm("ls", resp, "", path)
-        
-        #Should maybe be just for new LLM generations?
-        print("RESPONSE!!")
-        print(resp)
-        print("------")
         self.ch.enforce_ls(path, resp)
         self.record_response_history("ls", resp, path=path)
-        
 
     def netstat_respond(self):
         resp = self.find_response("netstat")
         if not resp:
             resp = self.llm.generate_netstat_response()
             self.record_response_gm("netstat", resp)
-        print("RESPONSE!!")
-        print(resp)
-        print("------")
-
         return resp
         
     def ifconfig_respond(self):
@@ -98,10 +86,6 @@ class ResponseHandler():
         if not resp:
             resp = self.llm.generate_ifconfig_response()
             self.record_response_gm("ifconfig", resp)
-
-        print("ifconfig RESPONSE!!")
-        print(resp)
-        print("------")
         return resp
 
     def free_respond(self):
@@ -134,7 +118,6 @@ class ResponseHandler():
         return resp
 
 
-
 from collections import defaultdict
 
 def def_value():
@@ -149,6 +132,3 @@ class GeneralManager(metaclass=SingletonMeta):
             return self.response_cache[cmd][flags]
         else:
             return self.response_cache[cmd][flags][path]
-            
-
-    

@@ -1,5 +1,4 @@
 import os
-#To be added for LLM
 if os.environ["COWRIE_USE_LLM"].lower() == "true":
     from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, StoppingCriteria, StoppingCriteriaList
     import torch
@@ -32,7 +31,6 @@ class LLM:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using device: {self.device}")
         self.num_connections = None
-        #self.users = self.generate_users()
 
         quantization_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.bfloat16)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, token=token)
@@ -59,36 +57,6 @@ class LLM:
         response = self.tokenizer.decode(outputs[0][len_chat:], skip_special_tokens=True)
         print(f"LLM GENERATION TIME: {gen_end_time - gen_start_time}")
         return response
-#endregion
-
-#region template
-    def fill_template(self, messages, max_slot_len=20):
-        tokenized_template = self.tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=False, return_tensors="pt")
-        
-        holes = tokenized_template == TEMPLATE_TOKEN_ID
-        hole_indices = holes.nonzero()[:,1]
-
-        stopping_criteria = StoppingCriteriaList([NewWordSC(tokenizer=self.tokenizer)])
-
-        print("TOKENIZED TEMPLATE: ", tokenized_template)
-        print("HOLES: ", holes)
-        print("HOLE INDICES: ", hole_indices)
-
-        before = tokenized_template[:, :hole_indices[0]]
-        for i in range(hole_indices.shape[0]):
-            hole_i = hole_indices[i]
-    
-            #Need to check for cutoff instead of just removing last token if we want sampling
-            before = self.model.generate(before, 
-                                         do_sample=False,
-                                         max_new_tokens=max_slot_len,
-                                         stopping_criteria=stopping_criteria,
-                                         bad_words_ids=[[TEMPLATE_TOKEN_ID]])[:, :-1]
-            if hole_i == hole_indices[-1]:
-              tokenized_template = torch.cat([before, tokenized_template[:, hole_i+1:]], dim=1)
-            else:
-              before = torch.cat([before, tokenized_template[:, hole_i+1:hole_indices[i+1]]], dim=1)
-        return self.tokenizer.decode(tokenized_template[0, :])
 #endregion
 
 #region general response
@@ -170,68 +138,11 @@ class LLM:
 #endregion
 
 #region ifconfig
-    def generate_ifconfig_response_template(self, messages):
-        template = f"""
-eth0      Link encap:Ethernet  HWaddr {TEMPLATE_TOKEN}  
-          inet addr:{TEMPLATE_TOKEN}  Bcast:{TEMPLATE_TOKEN}  Mask:{TEMPLATE_TOKEN}
-          inet6 addr: {TEMPLATE_TOKEN} Scope:Link
-          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
-          RX packets:123456 errors:0 dropped:0 overruns:0 frame:0
-          TX packets:123456 errors:0 dropped:0 overruns:0 carrier:0
-          collisions:0 txqueuelen:1000 
-          RX bytes:{TEMPLATE_TOKEN} ({TEMPLATE_TOKEN} MB)  TX bytes:{TEMPLATE_TOKEN} ({TEMPLATE_TOKEN} MB)
-          Interrupt:20 Memory:fa800000-fa820000 
-
-lo        Link encap:Local Loopback  
-          inet addr:{TEMPLATE_TOKEN}  Mask:{TEMPLATE_TOKEN}
-          inet6 addr: ::1/128 Scope:Host
-          UP LOOPBACK RUNNING  MTU:{TEMPLATE_TOKEN}  Metric:1
-          RX packets:1234 errors:0 dropped:0 overruns:0 frame:0
-          TX packets:1234 errors:0 dropped:0 overruns:0 carrier:0
-          collisions:0 txqueuelen:1000 
-          RX bytes:{TEMPLATE_TOKEN} ({TEMPLATE_TOKEN} KB)  TX bytes:{TEMPLATE_TOKEN} ({TEMPLATE_TOKEN} KB)
-"""
-
-        messages.append({"role":"assistant", "content":template})
-        return self.fill_template(messages)
-
-
     def generate_ifconfig_response(self, use_template=False):
         return self.generate_general_response("ifconfig")
-
 #endregion
 
 #region netstat
-    def generate_netstat_response_template(self, messages):
-        if self.num_connections is None:
-            self.num_connections = np.random.randint(5, 15)
-            print(f"Num netstat connections created: {self.num_connections}")
-        template = f"""
-        Active Internet connections (w/o servers)
-Proto Recv-Q Send-Q Local Address           Foreign Address         State      
-tcp        0    200 ip-172-31-22-97.eu-:ssh 138.247.230.44:53322    ESTABLISHED
-Active UNIX domain sockets (w/o servers)
-Proto RefCnt Flags       Type       State         I-Node   Path
-unix  2      [ ]         DGRAM                    2356     /run/systemd/shutdownd
-unix  3      [ ]         DGRAM                    3180     /run/systemd/notify
-unix  2      [ ]         DGRAM                    3181     /run/systemd/cgroups-agent
-unix  6      [ ]         DGRAM                    3187     /run/systemd/journal/socket
-unix  2      [ ]         DGRAM                    2786     /run/chrony/chronyd.sock
-unix  15     [ ]         DGRAM                    3188     /dev/log
-unix  2      [ ]         DGRAM                    10108937 @0061b
-"""
-
-        for i in range(self.num_connections):
-            connection_type = np.random.choice(["DGRAM", "STREAM"], p=[0.2, 0.8])
-            state = "CONNECTED" if connection_type == "STREAM" else ""
-            ref_cnt = 3 if state == "CONNECTED" else np.random.choice([2, 3], p=[0.8, 0.2])
-            template += f"unix  {ref_cnt}      [ ]        {connection_type}      {state}        {TEMPLATE_TOKEN}        {TEMPLATE_TOKEN}\n"
-
-        template += "unix  2      [ ]         DGRAM                    11188467"
-
-        messages.append({"role":"assistant", "content":template})
-        return self.fill_template(messages)
-
     def generate_netstat_response(self, use_template=False):
         return self.generate_general_response("netstat")
 #endregion
@@ -275,7 +186,7 @@ Swap:{SwapTotal:>14}{calc_swap_used:>12}{SwapFree:>12}
     def generate_last_response(self):
         with open("/cowrie/cowrie-git/honeyfs/etc/passwd", "r") as passwd_file:
             users = passwd_file.read()
-        response = self.generate_general_response("last", extra_info="Here is a list of users to use in the leftmost column: {users}")
+        response = self.generate_general_response("last", extra_info="\nHere is a list of users to use in the leftmost column: {users}\n")
         return response
 #endregion
 
@@ -351,7 +262,6 @@ NUMA node0 CPU(s):     {NUMA node0 CPU(s)}
 
         filled_template = template.format(rows=rows).rstrip()
         return filled_template
-
 #endregion
 
 #region hostname
@@ -367,7 +277,6 @@ NUMA node0 CPU(s):     {NUMA node0 CPU(s)}
 
         messages = [{"role":"system", "content":base_prompt},
                     {"role":"user", "content":"cat /etc/passwd"}]
-        
 
         return self.generate_from_messages(messages, max_new_tokens=1000)
 #endregion
@@ -382,7 +291,6 @@ class FakeLLM:
             return "Something generated by a LLM"
         return func
     
-
 class NewWordSC(StoppingCriteria):
     def __init__(self, tokenizer):
         super().__init__()
@@ -464,5 +372,4 @@ class ServiceLLM(metaclass=SingletonMeta):
             parent_conn.close()
             return result
         return func
-
 #endregion

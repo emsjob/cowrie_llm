@@ -1,6 +1,5 @@
 import sys
 sys.path.append("/cowrie/cowrie-git/src")
-
 from model.llm import LLM, FakeLLM
 import hashlib
 import json
@@ -9,7 +8,6 @@ from os import path
 from cowrie.core.config import CowrieConfig
 from cowrie.scripts import fsctl
 import re
-
 
 TEXTCMDS_PATH = "/cowrie/cowrie-git/share/cowrie/txtcmds"
 HONEYFS_PATH = "/cowrie/cowrie-git/honeyfs"
@@ -47,14 +45,8 @@ if lscpu_resp[-1] != "\n":
 
 LSCPU_PATH = TEXTCMDS_PATH+"/usr/bin/lscpu"
 
-with open(LSCPU_PATH, "r") as lscpu_file:
-    print("LSCPU BEFORE: ", lscpu_file.read())
-
 with open(LSCPU_PATH, "w") as lscpu_file:
     lscpu_file.write(lscpu_resp)
-
-with open(LSCPU_PATH, "r") as lscpu_file:
-    print("LSCPU AFTER: ", lscpu_file.read())
 #endregion
 
 #region nproc
@@ -69,14 +61,8 @@ if nproc_resp[-1] != "\n":
     nproc_resp += "\n"
 NPROC_PATH = TEXTCMDS_PATH+"/usr/bin/nproc"
 
-with open(NPROC_PATH, "r") as nproc_file:
-    print("NPROC BEFORE: ", nproc_file.read())
-
 with open(NPROC_PATH, "w") as nproc_file:
     nproc_file.write(nproc_resp)
-
-with open(NPROC_PATH, "r") as nproc_file:
-    print("NPROC AFTER: ", nproc_file.read())
 #endregion
 
 #region df
@@ -85,14 +71,8 @@ if df_resp[-1] != "\n":
     df_resp += "\n"
 DF_PATH = TEXTCMDS_PATH+"/bin/df"
 
-with open(DF_PATH, "r") as df_file:
-    print("DF BEFORE: ", df_file.read())
-
 with open(DF_PATH, "w") as df_file:
     df_file.write(df_resp)
-
-with open(DF_PATH, "r") as df_file:
-    print("DF AFTER: ", df_file.read())
 #endregion
 
 #region hostname
@@ -123,7 +103,6 @@ new_i = users.index("admin")
 users = users[new_i:]
 print("new users:", users)
 
-
 fscmd = fsctl.fseditCmd("/cowrie/cowrie-git/share/cowrie/fs.pickle")
 fscmd.pickle_file_path = "/cowrie/cowrie-git/share/cowrie/fs2.pickle"
 
@@ -138,7 +117,6 @@ with open("/cowrie/cowrie-git/etc/userdb.txt", "a") as userdb_file:
             fscmd.do_mkdir(f"/home/{user} llm")
             userdb_file.write(f"{user}:x:/{user}/i\n")
 
-
 #Unnecessary?
 fscmd.save_pickle()
 
@@ -150,4 +128,3 @@ CowrieConfig.set("shell", "filesystem", "${honeypot:share_path}/fs2.pickle")
 #Potential bug, likely harmless if it works
 with open("/cowrie/cowrie-git/etc/cowrie.cfg", "w") as configfile:
     CowrieConfig.write(configfile)
-
