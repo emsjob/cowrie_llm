@@ -273,85 +273,10 @@ Swap:{SwapTotal:>14}{calc_swap_used:>12}{SwapFree:>12}
 
 #region last
     def generate_last_response(self):
-        response = self.generate_general_response("last")
-        self.users = self.generate_users()
-        re_users = re.split('\n| |\t|,|\'|\"|`', self.users)
-        print(f"LIST OF USERS: {self.users}")
-        print(f"LAST RESPONSE LIST: {response.split()}")
-        print(f"REGEXED USERS: {re_users}")
-        users_list = self.users.split("\n")
-        print(f"USER LIST: {users_list}")
-    
-        response_lines = response.split("\n")
-        print(f"RESPONSE LINES: {response_lines}")
-
-        response_lines = []
-        '''
-        for user in regexed_users:
-            if user not in ["", "$", "getent", "passwd"]
-            response_lines.append(
-                "%-8s %-12s %-16s %s   still logged in\n" % (
-                    user,
-                    "pts/0",
-                    "192.168.1.100",
-                    time.strftime("%a %b %d %H:%M", time.localtime(time.time()))
-                )
-            )
-
-            response_lines.append("\n")
-            response_lines.append(
-                "wtmp begins {}\n".format(
-                    time.strftime(
-                        "%a %b %d %H:%M:%S %Y",
-                        time.localtime(
-                            time.time() // (3600 * 24) * (3600 * 24) + 63
-                        )
-                    )
-                )
-            )
-        '''
-        for user in re_users:
-            if user not in ["", "$", "getent", "passwd"]:
-                response_lines.append(
-                    "{:<8} {:<12} {:<16} {}   still logged in\n".format(
-                        user,
-                        ":1",
-                        ":1",
-                        time.strftime("%a %b %d %H:%M", time.localtime(time.time()))
-                    )
-                )
-
-        response_lines.extend([
-            "{:<8} {:<12} {:<16} {}   still running\n".format(
-                "reboot",
-                "system boot",
-                "5.15.0-43-generi",
-                time.strftime("%a %b %d %H:%M", time.localtime(time.time() - 86400))
-            ),
-            "{:<8} {:<12} {:<16} {} - crash ({})\n".format(
-                users_list[0],
-                ":1",
-                ":1",
-                time.strftime("%a %b %d %H:%M", time.localtime(time.time() - 172800)),
-                "2+18:28"
-            )
-        ])
-
-        response_lines.append("\n")
-        response_lines.append(
-            "wtmp begins {}\n".format(
-                time.strftime(
-                    "%a %b %d %H:%M:%S %Y",
-                    time.localtime(
-                        time.time() // (3600 * 24) * (3600 * 24) + 63
-                    )
-                )
-            )
-        )
-
-        filled_template = "".join(response_lines).rstrip()
-        return filled_template
-        #return response
+        with open("/cowrie/cowrie-git/honeyfs/etc/passwd", "r") as passwd_file:
+            users = passwd_file.read()
+        response = self.generate_general_response("last", extra_info="Here is a list of users to use in the leftmost column: {users}")
+        return response
 #endregion
 
 #region staticcmds
