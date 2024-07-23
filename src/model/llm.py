@@ -6,6 +6,7 @@ if os.environ["COWRIE_USE_LLM"].lower() == "true":
 import json
 import numpy as np
 import time
+import re
 
 RESPONSE_PATH = "/cowrie/cowrie-git/src/model"
 PROMPTS_PATH = "/cowrie/cowrie-git/src/model/prompts"
@@ -31,6 +32,7 @@ class LLM:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using device: {self.device}")
         self.num_connections = None
+        #self.users = self.generate_users()
 
         quantization_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.bfloat16)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, token=token)
@@ -230,7 +232,6 @@ unix  2      [ ]         DGRAM                    10108937 @0061b
         messages.append({"role":"assistant", "content":template})
         return self.fill_template(messages)
 
-
     def generate_netstat_response(self, use_template=False):
         return self.generate_general_response("netstat")
 #endregion
@@ -273,8 +274,84 @@ Swap:{SwapTotal:>14}{calc_swap_used:>12}{SwapFree:>12}
 #region last
     def generate_last_response(self):
         response = self.generate_general_response("last")
-        print(f"LAST RESPONSE: {response}")
-        return response
+        self.users = self.generate_users()
+        re_users = re.split('\n| |\t|,|\'|\"|`', self.users)
+        print(f"LIST OF USERS: {self.users}")
+        print(f"LAST RESPONSE LIST: {response.split()}")
+        print(f"REGEXED USERS: {re_users}")
+        users_list = self.users.split("\n")
+        print(f"USER LIST: {users_list}")
+    
+        response_lines = response.split("\n")
+        print(f"RESPONSE LINES: {response_lines}")
+
+        response_lines = []
+        '''
+        for user in regexed_users:
+            if user not in ["", "$", "getent", "passwd"]
+            response_lines.append(
+                "%-8s %-12s %-16s %s   still logged in\n" % (
+                    user,
+                    "pts/0",
+                    "192.168.1.100",
+                    time.strftime("%a %b %d %H:%M", time.localtime(time.time()))
+                )
+            )
+
+            response_lines.append("\n")
+            response_lines.append(
+                "wtmp begins {}\n".format(
+                    time.strftime(
+                        "%a %b %d %H:%M:%S %Y",
+                        time.localtime(
+                            time.time() // (3600 * 24) * (3600 * 24) + 63
+                        )
+                    )
+                )
+            )
+        '''
+        for user in re_users:
+            if user not in ["", "$", "getent", "passwd"]:
+                response_lines.append(
+                    "{:<8} {:<12} {:<16} {}   still logged in\n".format(
+                        user,
+                        ":1",
+                        ":1",
+                        time.strftime("%a %b %d %H:%M", time.localtime(time.time()))
+                    )
+                )
+
+        response_lines.extend([
+            "{:<8} {:<12} {:<16} {}   still running\n".format(
+                "reboot",
+                "system boot",
+                "5.15.0-43-generi",
+                time.strftime("%a %b %d %H:%M", time.localtime(time.time() - 86400))
+            ),
+            "{:<8} {:<12} {:<16} {} - crash ({})\n".format(
+                users_list[0],
+                ":1",
+                ":1",
+                time.strftime("%a %b %d %H:%M", time.localtime(time.time() - 172800)),
+                "2+18:28"
+            )
+        ])
+
+        response_lines.append("\n")
+        response_lines.append(
+            "wtmp begins {}\n".format(
+                time.strftime(
+                    "%a %b %d %H:%M:%S %Y",
+                    time.localtime(
+                        time.time() // (3600 * 24) * (3600 * 24) + 63
+                    )
+                )
+            )
+        )
+
+        filled_template = "".join(response_lines).rstrip()
+        return filled_template
+        #return response
 #endregion
 
 #region staticcmds
@@ -338,13 +415,13 @@ NUMA node0 CPU(s):     {NUMA node0 CPU(s)}
             }
             filesystems.append(filesystem_info)
 
-        template = """Filesystem                                              Size  Used Avail Use% Mounted on
+        template = """Filesystem                                               Size  Used Avail Use% Mounted on
 {rows}
 """
 
         rows = ""
         for fs in filesystems:
-            row = "{Filesystem:<52}{Size:>5} {Used:>5} {Avail:>5} {Use%:>5} {Mounted_on:<}\n".format(**fs)
+            row = "{Filesystem:<55}{Size:>5} {Used:>5} {Avail:>5} {Use%:>5} {Mounted_on:<}\n".format(**fs)
             rows += row
 
         filled_template = template.format(rows=rows).rstrip()
