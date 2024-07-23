@@ -96,7 +96,7 @@ with open(DF_PATH, "r") as df_file:
 #endregion
 
 #region hostname
-hostname_resp = get_resp("hostname", "generate_host_name")
+hostname_resp = get_resp("hostname", "generate_host_name").strip(" \n.,`\'\"")
 if hostname_resp[-1] != "\n":
     hostname_resp = hostname_resp+"\n"
 print("Generated hostname:", hostname_resp)
@@ -105,19 +105,39 @@ CowrieConfig.set("honeypot", "hostname", hostname_resp)
 #endregion
 
 #region users
-users = llm.generate_users()
-print("generated users:", users) 
-users = re.split('\n| |\t|,|\'|\"|`', users)
+with open("/cowrie/cowrie-git/honeyfs/etc/passwd", "r") as passwd_file:
+    base_passwd = passwd_file.read()
+
+new_passwd = llm.add_users(base_passwd)
+print(f"new passwd:\n{new_passwd}")
+
+if new_passwd[-1] != "\n":
+    new_passwd += "\n"
+
+with open("/cowrie/cowrie-git/honeyfs/etc/passwd", "w") as passwd_file:
+    passwd_file.write(new_passwd)
+
+users = [line.split(":")[0] for line in new_passwd.split("\n")]
+#This relies on the admin user existing at the end of the base userdb.txt file
+new_i = users.index("admin")
+users = users[new_i:]
+print("new users:", users)
+
+
 fscmd = fsctl.fseditCmd("/cowrie/cowrie-git/share/cowrie/fs.pickle")
 fscmd.pickle_file_path = "/cowrie/cowrie-git/share/cowrie/fs2.pickle"
 
 fscmd.do_rm("-r /home")
 fscmd.do_mkdir("/home false")
-for user in users:
-    if user:
-        user = user.split("/")[-1]
-        print("adding user:", user)
-        fscmd.do_mkdir(f"/home/{user} llm")
+with open("/cowrie/cowrie-git/etc/userdb.txt", "a") as userdb_file:
+    print("starting loop")
+    for user in users:
+        if user:
+            user = user.split("/")[-1]
+            print("adding user:", user)
+            fscmd.do_mkdir(f"/home/{user} llm")
+            userdb_file.write(f"{user}:x:/{user}/i\n")
+
 
 #Unnecessary?
 fscmd.save_pickle()

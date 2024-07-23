@@ -359,11 +359,15 @@ NUMA node0 CPU(s):     {NUMA node0 CPU(s)}
         return self.generate_from_messages(messages)
 #endregion
 
-#region users
-    def generate_users(self):
-        messages = [{"role":"system", "content":self.profile},
-                    {"role":"user", "content":"List the account name of users that might exist on the system."}]
-        return self.generate_from_messages(messages)
+#region add users
+    def add_users(self, passwd):
+        base_prompt = self.profile + "\nYou need to extend the base /etc/passwd file with realistic users which would be added to the system. Make sure that users you add have their home directory inside the /home directory, like the admin user. The base /etc/passwd file which you should extend is:\n" + passwd
+
+        messages = [{"role":"system", "content":base_prompt},
+                    {"role":"user", "content":"cat /etc/passwd"}]
+        
+
+        return self.generate_from_messages(messages, max_new_tokens=1000)
 #endregion
 
 #region support-classes

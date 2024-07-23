@@ -55,9 +55,7 @@ class ResponseHandler():
     
     def record_response_gm(self, cmd, resp, flags="", path=""):
         if path:
-            print("before record1:", self.gm.response_cache[cmd][flags][path])
             self.gm.response_cache[cmd][flags][path] = resp
-            print("after record1:", self.gm.response_cache[cmd][flags][path])
         else:
             self.gm.response_cache[cmd][flags] = resp
 
@@ -74,9 +72,7 @@ class ResponseHandler():
         if not resp:
             ls_history = self.get_cmds_history(["ls"])
             resp = self.llm.generate_ls_response(path, history=ls_history)
-            print("record before:", self.gm.response_cache)
             self.record_response_gm("ls", resp, "", path)
-            print("record after:", self.gm.response_cache)
         
         #Should maybe be just for new LLM generations?
         print("RESPONSE!!")

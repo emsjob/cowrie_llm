@@ -1,5 +1,5 @@
 import os
-from huggingface_hub import snapshot_download
+from huggingface_hub import snapshot_download, login
 
 RESPONSE_PATH = "/cowrie/cowrie-git/src/model"
 
@@ -10,7 +10,8 @@ def download_model(model_name):
     """Download a Hugging Face model and tokenizer to the specified directory"""
     with open(f"{RESPONSE_PATH}/token.txt", "r") as f:
         token = f.read().rstrip()
-    
+
+    login(token=token)
     '''
     if not os.path.exists(model_path):
         os.umask(0)

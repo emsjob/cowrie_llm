@@ -1,4 +1,1 @@
-
-root:x:*
 ai_sweden:x:cyberguard
-guest:x:support
