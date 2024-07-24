@@ -39,7 +39,13 @@ def get_resp(name, func_name):
     return resp
     
 #region lscpu
-lscpu_resp = get_resp("lscpu", "generate_lscpu_response")
+for _ in range(3):
+    try:
+        lscpu_resp = get_resp("lscpu", "generate_lscpu_response")
+        break
+    except Exception as error:
+        print("lscpu response failed, retrying...")
+        print(error)
 if lscpu_resp[-1] != "\n":
     lscpu_resp += "\n"
 
@@ -66,7 +72,12 @@ with open(NPROC_PATH, "w") as nproc_file:
 #endregion
 
 #region df
-df_resp = get_resp("df", "generate_df_response")
+for _ in range(3):
+    try:
+        df_resp = get_resp("df", "generate_df_response")
+        break
+    except:
+        print("df response failed, retrying...")
 if df_resp[-1] != "\n":
     df_resp += "\n"
 DF_PATH = TEXTCMDS_PATH+"/bin/df"
@@ -76,7 +87,12 @@ with open(DF_PATH, "w") as df_file:
 #endregion
 
 #region hostname
-hostname_resp = get_resp("hostname", "generate_host_name").strip(" \n.,`\'\"")
+for _ in range(3):
+    try:
+        hostname_resp = get_resp("hostname", "generate_host_name").strip(" \n.,`\'\"")
+        break
+    except:
+        print("hostname response failed, retrying...")
 if hostname_resp[-1] != "\n":
     hostname_resp = hostname_resp+"\n"
 print("Generated hostname:", hostname_resp)
@@ -88,7 +104,12 @@ CowrieConfig.set("honeypot", "hostname", hostname_resp)
 with open("/cowrie/cowrie-git/honeyfs/etc/passwd", "r") as passwd_file:
     base_passwd = passwd_file.read()
 
-new_passwd = llm.add_users(base_passwd)
+for _ in range(3):
+    try:
+        new_passwd = llm.add_users(base_passwd)
+        break
+    except:
+        print("adding users failed, retrying...")
 print(f"new passwd:\n{new_passwd}")
 
 if new_passwd[-1] != "\n":
