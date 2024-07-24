@@ -45,7 +45,7 @@ for _ in range(3):
         break
     except Exception as error:
         print("lscpu response failed, retrying...")
-        print(error)
+        print("Error: ", error)
 if lscpu_resp[-1] != "\n":
     lscpu_resp += "\n"
 
@@ -76,8 +76,9 @@ for _ in range(3):
     try:
         df_resp = get_resp("df", "generate_df_response")
         break
-    except:
+    except Exception as error:
         print("df response failed, retrying...")
+        print("Error: ", error)
 if df_resp[-1] != "\n":
     df_resp += "\n"
 DF_PATH = TEXTCMDS_PATH+"/bin/df"
@@ -91,8 +92,9 @@ for _ in range(3):
     try:
         hostname_resp = get_resp("hostname", "generate_host_name").strip(" \n.,`\'\"")
         break
-    except:
+    except Exception as error:
         print("hostname response failed, retrying...")
+        print("Error: ", error)
 if hostname_resp[-1] != "\n":
     hostname_resp = hostname_resp+"\n"
 print("Generated hostname:", hostname_resp)
@@ -108,8 +110,9 @@ for _ in range(3):
     try:
         new_passwd = llm.add_users(base_passwd)
         break
-    except:
+    except Exception as error:
         print("adding users failed, retrying...")
+        print("Error: ", error)
 print(f"new passwd:\n{new_passwd}")
 
 if new_passwd[-1] != "\n":
