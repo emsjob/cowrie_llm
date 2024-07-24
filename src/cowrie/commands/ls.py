@@ -141,13 +141,20 @@ class Command_ls(HoneyPotCommand):
             wincols = 80
 
         perline = int(wincols / (maxlen + 1))
-        for f in line:
-            if count == perline:
-                count = 0
-                self.write("\n")
-            self.write(f.ljust(maxlen + 1))
-            count += 1
-        self.write("\n")
+        total_length = sum([len(f) + 2 for f in line]) - 2
+        print(f"Total length: {total_length}, vs. wincols: {wincols}")
+        if total_length <= wincols:
+            print("writing one line")
+            self.write("  ".join(line) + "\n")
+        else:
+            print("writing multiple lines")
+            for f in line:
+                if count == perline:
+                    count = 0
+                    self.write("\n")
+                self.write(f.ljust(maxlen + 1))
+                count += 1
+            self.write("\n")
 
     def do_ls_l(self, path: str) -> None:
         files = self.get_dir_files(path)

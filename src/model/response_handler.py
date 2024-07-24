@@ -89,7 +89,7 @@ class ResponseHandler():
         return resp
 
     def free_respond(self):
-        resp = self,find_response("free")
+        resp = self.find_response("free")
         if not resp:
             resp = self.llm.generate_free_response()
             self.record_response_gm("free", resp)
