@@ -150,9 +150,6 @@ class LLM:
 #region free
     def generate_free_response(self):
         response = self.generate_general_response("free").split()
-        print(f"FREE RESPONSE: {response}")
-        for idx, val in enumerate(response):
-            print(f"idx: {idx}, val: {val}")
 
         mem_start_index = response.index("Mem:") + 1
         swap_start_index = response.index("Swap:") + 1 if "Swap:" in response else None
@@ -230,9 +227,6 @@ NUMA node0 CPU(s):     {NUMA node0 CPU(s)}
 
     def generate_df_response(self):
         response = self.generate_general_response("df", extra_info="\nDo not use anything other than the english language.\n").split()
-        print(f"DF RESPONSE: {response}")
-        for idx, val in enumerate(response):
-            print(f"idx: {idx}, val: {val}")
 
         response = response[6:]
         columns_per_row = 6
@@ -240,7 +234,6 @@ NUMA node0 CPU(s):     {NUMA node0 CPU(s)}
         filesystems = []
         for i in range(1, num_rows):
             start_index = i * columns_per_row + 1
-            print(f"START INDEX: {start_index}")
             filesystem_info = {
                 "Filesystem": response[start_index],
                 "Size": response[start_index + 1],

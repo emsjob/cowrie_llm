@@ -142,12 +142,9 @@ class Command_ls(HoneyPotCommand):
 
         perline = int(wincols / (maxlen + 1))
         total_length = sum([len(f) + 2 for f in line]) - 2
-        print(f"Total length: {total_length}, vs. wincols: {wincols}")
         if total_length <= wincols:
-            print("writing one line")
             self.write("  ".join(line) + "\n")
         else:
-            print("writing multiple lines")
             for f in line:
                 if count == perline:
                     count = 0
