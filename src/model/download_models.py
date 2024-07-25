@@ -4,7 +4,7 @@ from huggingface_hub import snapshot_download, login
 RESPONSE_PATH = "/cowrie/cowrie-git/src/model"
 
 #MODEL_NAME = "microsoft/Phi-3-mini-4k-instruct"
-MODEL_NAME = "meta-llama/Meta-Llama-3-8B-Instruct"
+MODEL_NAME = "meta-llama/Meta-Llama-3.1-8B-Instruct"
 
 def download_model(model_name):
     """Download a Hugging Face model and tokenizer to the specified directory"""

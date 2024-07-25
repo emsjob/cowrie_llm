@@ -15,7 +15,7 @@ TEMPLATE_TOKEN_ID = 0
 SYSTEM_ROLE_AVAILABLE = True
 
 #MODEL_NAME = "microsoft/Phi-3-mini-4k-instruct"
-MODEL_NAME = "meta-llama/Meta-Llama-3-8B-Instruct"
+MODEL_NAME = "meta-llama/Meta-Llama-3.1-8B-Instruct"
 
 with open(f"{RESPONSE_PATH}/cmd_lookup.json", "r") as f:
     LOOKUPS = json.load(f)
