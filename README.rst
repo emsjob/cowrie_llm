@@ -1,7 +1,14 @@
 Cowrie LLM
 ######
 
-A LLM enhanced cowrie shell.
+An LLM enhanced Cowrie shell.
+
+Built on the original Cowrie shell (https://github.com/cowrie/cowrie) with an LLM integrated into it.
+
+The honeypot is easily adaptable and the LLM can generate different types of systems by modifying the following file:
+``src/model/prompts/profile.txt``
+
+Run Instructions:
 
 1. Install stuff for GPU:
 ``chmod +x gpu_configuration.sh && ./gpu_configuration.sh``
