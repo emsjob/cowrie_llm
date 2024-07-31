@@ -90,7 +90,7 @@ with open(DF_PATH, "w") as df_file:
 #region hostname
 for _ in range(3):
     try:
-        hostname_resp = get_resp("hostname", "generate_host_name").strip(" \n.,`\'\"")
+        hostname_resp = get_resp("hostname", "generate_host_name")
         break
     except Exception as error:
         print("hostname response failed, retrying...")

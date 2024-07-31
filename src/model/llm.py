@@ -260,7 +260,7 @@ NUMA node0 CPU(s):     {NUMA node0 CPU(s)}
 #region hostname
     def generate_host_name(self):
         messages = [{"role":"system", "content":self.profile},
-                    {"role":"user", "content":"Respond with a short and creative host name for this system, without spaces. Do not simply name it 'host' or something similar but consider the actual profile of the system."}]
+                    {"role":"user", "content":"Respond with a short and creative host name for this system, without spaces. Do not simply name it 'host' or something similar but consider the actual profile of the system. Respond only with the string representing the hostname."}]
         return self.generate_from_messages(messages)
 #endregion
 
